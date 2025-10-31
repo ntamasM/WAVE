@@ -1,7 +1,7 @@
 appId: 'com.focuslock'
 productName: 'FocusLock'
 directories:
-  buildResources: resources
+  buildResources: assets
   output: dist
 files:
   - from: .
@@ -11,12 +11,14 @@ files:
       - '!dist/*'
       - '!node_modules'
 extraResources:
-  - from: resources/media
+  - from: assets/media
     to: media
     filter:
       - '**/*'
-  - from: resources/FocusLock.png
-    to: FocusLock.png
+  - from: assets/app-media
+    to: app-media
+    filter:
+      - '**/*'
 win:
   target:
     - target: nsis
@@ -25,7 +27,7 @@ win:
     - target: portable
       arch:
         - x64
-  icon: resources/FocusLock.png
+  icon: assets/app-media/FocusLock.png
   certificateFile: null
   sign: null
   signingHashAlgorithms: []

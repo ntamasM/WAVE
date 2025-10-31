@@ -137,19 +137,26 @@ const BlankScreen: React.FC = () => {
   const [customization, setCustomization] = useState<CustomizationSettings>(DEFAULT_CUSTOMIZATION);
 
   useEffect(() => {
+    console.log('[BlankScreen] Component mounted, loading settings...');
     // Load customization settings
     window.focusLockAPI.getSettings().then((settings) => {
+      console.log('[BlankScreen] Settings loaded:', settings);
       if (settings.customization) {
         setCustomization(settings.customization);
+        console.log('[BlankScreen] Customization applied:', settings.customization.backgroundGradient);
       }
     });
   }, []);
 
+  console.log('[BlankScreen] Rendering with gradient:', customization.backgroundGradient);
+
   return (
     <div
-      className="min-h-screen"
+      className="min-h-screen w-full"
       style={{
         background: `linear-gradient(135deg, ${customization.backgroundGradient.color1} 0%, ${customization.backgroundGradient.color2} 50%, ${customization.backgroundGradient.color3} 100%)`,
+        width: '100vw',
+        height: '100vh',
       }}
     />
   );
@@ -160,13 +167,18 @@ const Router: React.FC = () => {
   const urlParams = new URLSearchParams(window.location.search);
   const mode = urlParams.get('mode');
   const display = urlParams.get('display');
+  const isPrimary = urlParams.get('isPrimary') === 'true';
+
+  console.log('[FocusLock Router]', { mode, display, isPrimary, url: window.location.href });
 
   if (mode === 'lock') {
-    // Show content only on primary display (index 0)
-    if (display === '0') {
+    // Show timer content only on primary display
+    if (isPrimary) {
+      console.log('[FocusLock] Rendering LockScreen (Primary Display)');
       return <LockScreen />;
     }
-    // Show blank screen on secondary displays
+    // Show gradient on all secondary displays
+    console.log('[FocusLock] Rendering BlankScreen (Secondary Display)');
     return <BlankScreen />;
   }
 

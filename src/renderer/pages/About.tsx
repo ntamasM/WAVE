@@ -11,11 +11,11 @@ export const About: React.FC = () => {
         {/* App Info */}
         <div className="text-center">
           <div className="bg-vista-blue-50 dark:bg-vista-blue-900/20 rounded-2xl p-6 inline-block mb-4">
-            <img src="./FocusLock.png" alt="FocusLock" className="w-24 h-24 object-contain mx-auto" />
+            <img src="app-media://FocusLock.png" alt="FocusLock" className="w-24 h-24 object-contain mx-auto" />
           </div>
           <h1 className="text-4xl font-bold text-primary mb-2">FocusLock</h1>
           <p className="text-secondary text-lg">Enforce focus through automated OS-level breaks</p>
-          <p className="text-sm text-muted mt-2 font-medium">Version 0.0.5-beta</p>
+          <p className="text-sm text-muted mt-2 font-medium">Version 0.0.11-beta</p>
         </div>
 
         {/* Description */}

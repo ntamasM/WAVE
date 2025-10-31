@@ -2,42 +2,49 @@ import { join } from 'path';
 import { is } from '@electron-toolkit/utils';
 
 /**
- * Get the path to the resources directory.
- * In development: uses __dirname relative path to resources folder
- * In production: uses process.resourcesPath (installed app location)
+ * Get the path to the app-media directory (private app assets like logos).
+ * In development: uses __dirname relative path to assets/app-media folder
+ * In production: uses process.resourcesPath/app-media (installed app location)
  *
  * @param isDirname - The __dirname value from the calling module
- * @returns The absolute path to the resources directory
+ * @returns The absolute path to the app-media directory
  */
-export function getResourcesPath(isDirname: string): string {
+export function getAppMediaPath(isDirname: string): string {
   if (is.dev) {
-    // In development, resources are relative to the compiled dist folder
-    return join(isDirname, '../../resources');
+    // In development, assets are relative to the compiled dist folder
+    return join(isDirname, '../../assets/app-media');
   } else {
-    // In production, resources are in the app's resources folder
-    // process.resourcesPath points to the app.asar/resources directory
-    return process.resourcesPath;
+    // In production, app-media is in the app's resources folder
+    return join(process.resourcesPath, 'app-media');
   }
 }
 
 /**
- * Get the path to a specific resource file.
+ * Get the path to the media directory (user-accessible default media).
+ * In development: uses __dirname relative path to assets/media folder
+ * In production: uses process.resourcesPath/media (installed app location)
  *
  * @param isDirname - The __dirname value from the calling module
- * @param relativePath - The relative path from the resources directory (e.g., 'FocusLock.png' or 'media/logo.png')
- * @returns The absolute path to the resource file
+ * @returns The absolute path to the media directory
  */
-export function getResourcePath(isDirname: string, relativePath: string): string {
-  const resourcesPath = getResourcesPath(isDirname);
-  return join(resourcesPath, relativePath);
+export function getMediaPath(isDirname: string): string {
+  if (is.dev) {
+    // In development, assets are relative to the compiled dist folder
+    return join(isDirname, '../../assets/media');
+  } else {
+    // In production, media is in the app's resources folder
+    return join(process.resourcesPath, 'media');
+  }
 }
 
 /**
- * Get the path to the media resources directory.
+ * Get the path to a specific app asset file (logo, icon, etc.).
  *
  * @param isDirname - The __dirname value from the calling module
- * @returns The absolute path to the media directory in resources
+ * @param relativePath - The relative path from the app-media directory (e.g., 'FocusLock.png' or 'FocusLock.svg')
+ * @returns The absolute path to the asset file
  */
-export function getMediaResourcesPath(isDirname: string): string {
-  return getResourcePath(isDirname, 'media');
+export function getAppAssetPath(isDirname: string, relativePath: string): string {
+  const appMediaPath = getAppMediaPath(isDirname);
+  return join(appMediaPath, relativePath);
 }

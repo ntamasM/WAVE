@@ -6,7 +6,7 @@ import { SettingsStore } from './settings-store';
 import { CycleManager } from './cycle-manager';
 import { handleIPC } from './ipc';
 import { setAutoStart, getAutoStart } from './autostart';
-import { getResourcePath } from './resources';
+import { getAppAssetPath, getMediaPath } from './resources';
 import fs from 'fs/promises';
 import { existsSync } from 'fs';
 
@@ -18,7 +18,7 @@ let cycleManager: CycleManager | null = null;
 let isQuitting = false;
 
 const createWindow = (): void => {
-  const iconPath = getResourcePath(__dirname, 'FocusLock.png');
+  const iconPath = getAppAssetPath(__dirname, 'FocusLock.png');
   mainWindow = new BrowserWindow({
     width: 1500,
     height: 700,
@@ -44,7 +44,7 @@ const createWindow = (): void => {
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL']);
     // Open DevTools in development
-    mainWindow.webContents.openDevTools();
+    // mainWindow.webContents.openDevTools();
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
   }
@@ -65,13 +65,13 @@ const createWindow = (): void => {
     }
   });
 
-  // Override CSP to allow media:// protocol for images
+  // Override CSP to allow media:// and app-media:// protocols for images
   mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
     const headers = { ...details.responseHeaders };
 
-    // Override CSP to allow media:// custom protocol for images
+    // Override CSP to allow media:// and app-media:// custom protocols for images
     headers['Content-Security-Policy'] = [
-      "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: media:;",
+      "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: media: app-media:;",
     ];
 
     callback({ responseHeaders: headers });
@@ -79,7 +79,7 @@ const createWindow = (): void => {
 };
 
 const createTray = (): void => {
-  const iconPath = getResourcePath(__dirname, 'FocusLock.png');
+  const iconPath = getAppAssetPath(__dirname, 'FocusLock.png');
   const icon = nativeImage.createFromPath(iconPath);
   // Resize icon for tray (16x16 is standard for Windows tray)
   const trayIcon = icon.resize({ width: 16, height: 16 });
@@ -182,16 +182,13 @@ const initializeMediaDirectory = async (): Promise<void> => {
     for (const fileName of defaultMedia) {
       const destPath = join(mediaDir, fileName);
       if (!existsSync(destPath)) {
-        const sourcePath = getResourcePath(__dirname, join('media', fileName));
-        // If not in media folder, try resources root
-        const fallbackPath = getResourcePath(__dirname, fileName);
+        // Get bundled default media from assets/media
+        const sourcePath = getMediaPath(__dirname);
+        const bundledFile = join(sourcePath, fileName);
 
-        if (existsSync(sourcePath)) {
-          await fs.copyFile(sourcePath, destPath);
-          logger.info(`Copied ${fileName} to media directory from media folder`);
-        } else if (existsSync(fallbackPath)) {
-          await fs.copyFile(fallbackPath, destPath);
-          logger.info(`Copied ${fileName} to media directory from resources`);
+        if (existsSync(bundledFile)) {
+          await fs.copyFile(bundledFile, destPath);
+          logger.info(`Copied ${fileName} to user media directory`);
         }
       }
     }
@@ -213,12 +210,22 @@ protocol.registerSchemesAsPrivileged([
       bypassCSP: false,
     },
   },
+  {
+    scheme: 'app-media',
+    privileges: {
+      secure: true,
+      standard: true,
+      supportFetchAPI: true,
+      corsEnabled: false,
+      bypassCSP: false,
+    },
+  },
 ]);
 
 app.on('ready', async () => {
   logger.info('App starting...');
 
-  // Register media protocol handler
+  // Register media protocol handler (for user customizable media)
   protocol.handle('media', async (request) => {
     try {
       // Remove protocol and clean up the URL (strip trailing slashes)
@@ -229,8 +236,9 @@ app.on('ready', async () => {
       let filePath = join(mediaDir, url);
 
       if (!existsSync(filePath)) {
-        // Fallback to bundled resources
-        filePath = getResourcePath(__dirname, join('media', url));
+        // Fallback to bundled default media
+        const bundledMediaPath = getMediaPath(__dirname);
+        filePath = join(bundledMediaPath, url);
       }
 
       if (!existsSync(filePath)) {
@@ -242,6 +250,25 @@ app.on('ready', async () => {
       return net.fetch(`file://${filePath}`);
     } catch (error) {
       logger.error('Error serving media file', error as Error);
+      return new Response('Internal error', { status: 500 });
+    }
+  });
+
+  // Register app-media protocol handler (for bundled app assets like logo)
+  protocol.handle('app-media', async (request) => {
+    try {
+      const url = request.url.replace('app-media://', '').replace(/\/+$/, '');
+      const appMediaPath = getAppAssetPath(__dirname, url);
+
+      if (!existsSync(appMediaPath)) {
+        logger.error(`App media file not found: ${url}`);
+        return new Response('File not found', { status: 404 });
+      }
+
+      logger.info(`Serving app media: ${appMediaPath}`);
+      return net.fetch(`file://${appMediaPath}`);
+    } catch (error) {
+      logger.error('Error serving app media file', error as Error);
       return new Response('Internal error', { status: 500 });
     }
   });

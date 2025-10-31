@@ -34,7 +34,7 @@ export const TitleBar: React.FC<TitleBarProps> = ({ currentPage, onNavigate }) =
       >
         {/* Left: App Logo and Title */}
         <div className="flex items-center gap-3 px-4">
-          <img src="./FocusLock.png" alt="FocusLock" className="w-6 h-6 object-contain" />
+          <img src="app-media://FocusLock.png" alt="FocusLock" className="w-6 h-6 object-contain" />
           <span className="font-bold text-lg text-vista-blue-300">FocusLock</span>
         </div>
 

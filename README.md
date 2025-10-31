@@ -236,15 +236,15 @@ files:
 win:
   target:
     - nsis
-  icon: resources/FocusLock.png
+  icon: assets/app-media/FocusLock.png
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: true
   createStartMenuShortcut: true
   shortcutName: FocusLock
-  installerIcon: resources/FocusLock.png
-  uninstallerIcon: resources/FocusLock.png
+  installerIcon: assets/app-media/FocusLock.png
+  uninstallerIcon: assets/app-media/FocusLock.png
 ```
 
 ## 📖 Usage Guide
@@ -403,7 +403,7 @@ const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000; // Change 7 to desired days
 
 ### Custom App Icon
 
-Replace `resources/FocusLock.png` and `resources/FocusLock.svg` with your custom images.
+Replace `assets/app-media/FocusLock.png` and `assets/app-media/FocusLock.svg` with your custom images.
 
 Rebuild with:
 
@@ -484,9 +484,12 @@ FocusLock/
 │       ├── types.ts                # Shared types
 │       └── ipc.ts                  # IPC contract & validation
 │
-├── resources/
-│   ├── icon.ico                    # Windows app icon
-│   └── icon.png                    # App icon (png)
+├── assets/
+│   ├── app-media/                  # Private app assets (logo, icons)
+│   │   ├── FocusLock.png          # App logo (PNG)
+│   │   └── FocusLock.svg          # App logo (SVG)
+│   └── media/                      # Default user media
+│       └── FocusLock.png          # Default lock screen logo
 │
 └── dist/                           # Build output (generated)
     ├── main/                       # Compiled main process
@@ -551,7 +554,7 @@ FocusLock/
 
 ---
 
-**Version:** 0.0.5-beta  
+**Version:** 0.0.11-beta  
 **Last Updated:** October 31, 2025  
 **Platform:** Windows 10+  
 **Status:** Beta
