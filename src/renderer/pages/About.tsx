@@ -1,7 +1,16 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { FaGlobe, FaHeart, FaCode, FaLock, FaWindows } from 'react-icons/fa';
 
 export const About: React.FC = () => {
+  const [logoUrl, setLogoUrl] = useState<string>('');
+
+  useEffect(() => {
+    // Resolve the app logo path
+    window.focusLockAPI.resolveLogoPath('./FocusLock.png').then((resolved) => {
+      setLogoUrl(resolved);
+    });
+  }, []);
+
   const handleOpenExternal = (url: string) => {
     window.focusLockAPI.openExternal(url);
   };
@@ -11,7 +20,7 @@ export const About: React.FC = () => {
         {/* App Info */}
         <div className="text-center">
           <div className="bg-vista-blue-50 dark:bg-vista-blue-900/20 rounded-2xl p-6 inline-block mb-4">
-            <img src="app-media://FocusLock.png" alt="FocusLock" className="w-24 h-24 object-contain mx-auto" />
+            {logoUrl && <img src={logoUrl} alt="FocusLock" className="w-24 h-24 object-contain mx-auto" />}
           </div>
           <h1 className="text-4xl font-bold text-primary mb-2">FocusLock</h1>
           <p className="text-secondary text-lg">Enforce focus through automated OS-level breaks</p>

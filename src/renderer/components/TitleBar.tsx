@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { FaHome, FaCog, FaPalette, FaInfoCircle, FaTimes, FaMinus, FaWindowMaximize } from 'react-icons/fa';
 
 interface TitleBarProps {
@@ -7,6 +7,15 @@ interface TitleBarProps {
 }
 
 export const TitleBar: React.FC<TitleBarProps> = ({ currentPage, onNavigate }) => {
+  const [logoUrl, setLogoUrl] = useState<string>('');
+
+  useEffect(() => {
+    // Resolve the app logo path
+    window.focusLockAPI.resolveLogoPath('./FocusLock.png').then((resolved) => {
+      setLogoUrl(resolved);
+    });
+  }, []);
+
   const navItems = [
     { id: 'home' as const, label: 'Home', icon: FaHome },
     { id: 'settings' as const, label: 'Settings', icon: FaCog },
@@ -34,7 +43,7 @@ export const TitleBar: React.FC<TitleBarProps> = ({ currentPage, onNavigate }) =
       >
         {/* Left: App Logo and Title */}
         <div className="flex items-center gap-3 px-4">
-          <img src="app-media://FocusLock.png" alt="FocusLock" className="w-6 h-6 object-contain" />
+          {logoUrl && <img src={logoUrl} alt="FocusLock" className="w-6 h-6 object-contain" />}
           <span className="font-bold text-lg text-vista-blue-300">FocusLock</span>
         </div>
 
