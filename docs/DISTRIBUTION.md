@@ -72,16 +72,31 @@ Your FocusLock application has been successfully built for Windows! You'll find 
 - No internet connection required
 - Open source (MIT License)
 
-## 📂 User Data Location
+## 📂 User Data & Resources Location
 
-User settings and media files are stored in:
+**User Data** (settings and custom media):
 
 ```
 %APPDATA%\focuslock\
 ├── config.json          # Application settings
 ├── logs\                # Application logs
-└── media\               # Custom logos/images
+└── media\               # Custom logos/images (user-uploaded)
 ```
+
+**Bundled Resources** (installed with app):
+
+```
+[Installation Directory]\resources\
+├── FocusLock.png        # Default app icon
+└── media\               # Default media files
+    └── FocusLock.png    # Default logo
+```
+
+The application uses a smart fallback system:
+
+1. First checks user media directory (`%APPDATA%\focuslock\media`)
+2. Falls back to bundled resources if not found
+3. All resources are independent from the development folder
 
 ## 🛠️ Uninstallation
 

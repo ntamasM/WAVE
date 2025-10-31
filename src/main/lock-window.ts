@@ -2,6 +2,7 @@ import { BrowserWindow, screen } from 'electron';
 import { join } from 'path';
 import { is } from '@electron-toolkit/utils';
 import { Logger } from './logger';
+import { getResourcePath } from './resources';
 
 const logger = new Logger('lock-window');
 
@@ -15,7 +16,7 @@ export class LockWindow {
     const displays = screen.getAllDisplays();
     logger.info(`Found ${displays.length} display(s)`);
 
-    const iconPath = join(__dirname, '../../resources/FocusLock.png');
+    const iconPath = getResourcePath(__dirname, 'FocusLock.png');
 
     // Create a lock window for each display
     displays.forEach((display, index) => {

@@ -20,16 +20,29 @@ FocusLock uses a custom `media://` protocol to serve media assets (logos, images
 
 ## Directory Structure
 
+### Development
+
 ```
 resources/
-  └── media/               # Bundled media assets (shipped with app)
+  └── media/               # Bundled media assets (dev folder)
       ├── FocusLock.png    # Default logo
       └── README.md
+```
+
+### Production (Installed App)
+
+```
+[Installation Directory]/resources/
+  ├── FocusLock.png        # App icon
+  └── media/               # Bundled media assets (shipped with app)
+      └── FocusLock.png    # Default logo
 
 %APPDATA%/focuslock/
   └── media/               # User media directory (created at runtime)
       └── (user files)     # User-uploaded logos and images
 ```
+
+**Note**: The app uses `process.resourcesPath` in production and relative paths in development to ensure resources are found correctly in both environments.
 
 ## How It Works
 
@@ -95,6 +108,45 @@ protocol.registerSchemesAsPrivileged([
   },
 ]);
 ```
+
+## Resource Path Resolution
+
+The app uses a dedicated utility module (`src/main/resources.ts`) to handle path resolution in both development and production:
+
+### Development
+
+- Uses `__dirname` relative paths: `join(__dirname, '../../resources')`
+- Points to the source `resources/` folder
+
+### Production
+
+- Uses `process.resourcesPath` which points to the installed app's resources folder
+- electron-builder copies resources via `extraResources` configuration
+
+### Implementation
+
+```typescript
+// src/main/resources.ts
+export function getResourcePath(isDirname: string, relativePath: string): string {
+  if (is.dev) {
+    return join(isDirname, '../../resources', relativePath);
+  } else {
+    return join(process.resourcesPath, relativePath);
+  }
+}
+```
+
+### electron-builder Configuration
+
+```yaml
+extraResources:
+  - from: resources/media
+    to: media
+  - from: resources/FocusLock.png
+    to: FocusLock.png
+```
+
+This ensures all media files are copied to the installation directory and are completely independent from the development folder.
 
 ## IPC Handlers
 

@@ -6,6 +6,7 @@ import { SettingsStore } from './settings-store';
 import { CycleManager } from './cycle-manager';
 import { handleIPC } from './ipc';
 import { setAutoStart, getAutoStart } from './autostart';
+import { getResourcePath } from './resources';
 import fs from 'fs/promises';
 import { existsSync } from 'fs';
 
@@ -17,7 +18,7 @@ let cycleManager: CycleManager | null = null;
 let isQuitting = false;
 
 const createWindow = (): void => {
-  const iconPath = join(__dirname, '../../resources/FocusLock.png');
+  const iconPath = getResourcePath(__dirname, 'FocusLock.png');
   mainWindow = new BrowserWindow({
     width: 1500,
     height: 700,
@@ -78,7 +79,7 @@ const createWindow = (): void => {
 };
 
 const createTray = (): void => {
-  const iconPath = join(__dirname, '../../resources/FocusLock.png');
+  const iconPath = getResourcePath(__dirname, 'FocusLock.png');
   const icon = nativeImage.createFromPath(iconPath);
   // Resize icon for tray (16x16 is standard for Windows tray)
   const trayIcon = icon.resize({ width: 16, height: 16 });
@@ -181,9 +182,9 @@ const initializeMediaDirectory = async (): Promise<void> => {
     for (const fileName of defaultMedia) {
       const destPath = join(mediaDir, fileName);
       if (!existsSync(destPath)) {
-        const sourcePath = join(__dirname, '../../resources/media', fileName);
+        const sourcePath = getResourcePath(__dirname, join('media', fileName));
         // If not in media folder, try resources root
-        const fallbackPath = join(__dirname, '../../resources', fileName);
+        const fallbackPath = getResourcePath(__dirname, fileName);
 
         if (existsSync(sourcePath)) {
           await fs.copyFile(sourcePath, destPath);
@@ -229,7 +230,7 @@ app.on('ready', async () => {
 
       if (!existsSync(filePath)) {
         // Fallback to bundled resources
-        filePath = join(__dirname, '../../resources/media', url);
+        filePath = getResourcePath(__dirname, join('media', url));
       }
 
       if (!existsSync(filePath)) {

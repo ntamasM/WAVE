@@ -10,6 +10,13 @@ files:
       - '!**/*.map'
       - '!dist/*'
       - '!node_modules'
+extraResources:
+  - from: resources/media
+    to: media
+    filter:
+      - '**/*'
+  - from: resources/FocusLock.png
+    to: FocusLock.png
 win:
   target:
     - target: nsis
