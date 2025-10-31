@@ -551,10 +551,10 @@ FocusLock/
 
 ---
 
-**Version:** 1.0.0  
-**Last Updated:** October 30, 2025  
+**Version:** 0.0.5-beta  
+**Last Updated:** October 31, 2025  
 **Platform:** Windows 10+  
-**Status:** Production Ready
+**Status:** Beta
 
 ## 👨‍💻 Developer
 

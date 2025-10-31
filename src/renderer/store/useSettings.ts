@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback } from 'react'
-import type { Settings } from '@/shared/types'
+import { useEffect, useState, useCallback } from 'react';
+import type { Settings } from '../../shared/types';
 
 /**
  * Zustand-like store hook using React context
@@ -11,80 +11,81 @@ const initialSettings: Settings = {
   lockMinutes: 5,
   canSkip: true,
   startWithWindows: true,
-  enableLogging: true
-}
+  enableLogging: true,
+  theme: 'light',
+};
 
-type SettingsListener = (settings: Settings) => void
-let currentSettings = initialSettings
-let listeners: Set<SettingsListener> = new Set()
+type SettingsListener = (settings: Settings) => void;
+let currentSettings = initialSettings;
+const listeners: Set<SettingsListener> = new Set();
 
 export const useSettings = () => {
-  const [settings, setSettingsState] = useState<Settings>(currentSettings)
-  const [loading, setLoading] = useState(true)
+  const [settings, setSettingsState] = useState<Settings>(currentSettings);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Load settings from main process
     window.focusLockAPI.getSettings().then((loaded) => {
-      currentSettings = loaded
-      setSettingsState(loaded)
-      setLoading(false)
-      listeners.forEach((cb) => cb(loaded))
-    })
-  }, [])
+      currentSettings = loaded;
+      setSettingsState(loaded);
+      setLoading(false);
+      listeners.forEach((cb) => cb(loaded));
+    });
+  }, []);
 
   const setSettings = useCallback(async (partial: Partial<Settings>) => {
     try {
-      const validation = await window.focusLockAPI.validateSettings(partial)
+      const validation = await window.focusLockAPI.validateSettings(partial);
       if (!validation.valid) {
-        throw new Error(validation.errors.join('; '))
+        throw new Error(validation.errors.join('; '));
       }
 
-      const updated = await window.focusLockAPI.setSettings(partial)
-      currentSettings = updated
-      setSettingsState(updated)
-      listeners.forEach((cb) => cb(updated))
-      return updated
+      const updated = await window.focusLockAPI.setSettings(partial);
+      currentSettings = updated;
+      setSettingsState(updated);
+      listeners.forEach((cb) => cb(updated));
+      return updated;
     } catch (err) {
-      console.error('Failed to set settings:', err)
-      throw err
+      console.error('Failed to set settings:', err);
+      throw err;
     }
-  }, [])
+  }, []);
 
   // Subscribe to changes
   useEffect(() => {
-    const listener = (s: Settings) => setSettingsState(s)
-    listeners.add(listener)
+    const listener = (s: Settings) => setSettingsState(s);
+    listeners.add(listener);
     return () => {
-      listeners.delete(listener)
-    }
-  }, [])
+      listeners.delete(listener);
+    };
+  }, []);
 
-  return { settings, setSettings, loading }
-}
+  return { settings, setSettings, loading };
+};
 
 // External setter for use in other modules
 export const updateSettings = async (partial: Partial<Settings>) => {
   try {
-    const validation = await window.focusLockAPI.validateSettings(partial)
+    const validation = await window.focusLockAPI.validateSettings(partial);
     if (!validation.valid) {
-      throw new Error(validation.errors.join('; '))
+      throw new Error(validation.errors.join('; '));
     }
 
-    const updated = await window.focusLockAPI.setSettings(partial)
-    currentSettings = updated
-    listeners.forEach((cb) => cb(updated))
-    return updated
+    const updated = await window.focusLockAPI.setSettings(partial);
+    currentSettings = updated;
+    listeners.forEach((cb) => cb(updated));
+    return updated;
   } catch (err) {
-    console.error('Failed to update settings:', err)
-    throw err
+    console.error('Failed to update settings:', err);
+    throw err;
   }
-}
+};
 
-export const getSettings = (): Settings => currentSettings
+export const getSettings = (): Settings => currentSettings;
 
 export const subscribe = (listener: SettingsListener) => {
-  listeners.add(listener)
+  listeners.add(listener);
   return () => {
-    listeners.delete(listener)
-  }
-}
+    listeners.delete(listener);
+  };
+};

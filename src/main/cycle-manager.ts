@@ -118,6 +118,18 @@ export class CycleManager {
     );
   }
 
+  skipBreak(): void {
+    if (this.state.phase === 'prelockPrompt') {
+      logger.info('Break skipped, resetting work cycle');
+      this.state.phase = 'work';
+      this.state.workStartedAt = Date.now();
+      this.state.prelockStartedAt = null;
+      this.emit('cycle:phase-changed', 'work');
+    } else {
+      logger.warn('skipBreak called but not in prelockPrompt phase');
+    }
+  }
+
   onSystemSuspend(): void {
     logger.info('System suspended, cycle paused');
     this.systemWasAsleep = true;

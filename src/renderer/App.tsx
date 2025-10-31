@@ -1,42 +1,60 @@
-import React from 'react';
-import { SettingsForm } from './components/SettingsForm';
-import { StatusCard } from './components/StatusCard';
-import { Controls } from './components/Controls';
+import React, { useState, useEffect } from 'react';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { Layout } from './components/Layout';
+import { TitleBar } from './components/TitleBar';
+import { Home } from './pages/Home';
+import { Settings } from './pages/Settings';
+import { Customization } from './pages/Customization';
+import { About } from './pages/About';
+import { useSettings } from './store/useSettings';
 
 export const App: React.FC = () => {
+  const [currentPage, setCurrentPage] = useState<'home' | 'settings' | 'customization' | 'about'>('home');
+  const { settings } = useSettings();
+
+  // Apply theme to document root
+  useEffect(() => {
+    const root = document.documentElement;
+    if (settings.theme === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+  }, [settings.theme]);
+
+  const renderPage = () => {
+    switch (currentPage) {
+      case 'home':
+        return <Home />;
+      case 'settings':
+        return <Settings />;
+      case 'customization':
+        return <Customization />;
+      case 'about':
+        return <About />;
+      default:
+        return <Home />;
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <div className="max-w-7xl mx-auto p-6">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 flex items-center gap-3">
-            <img src="./FocusLock.png" alt="FocusLock" className="w-12 h-12 object-contain" />
-            FocusLock
-          </h1>
-          <p className="text-gray-600 mt-2">Enforce focus through automated OS-level breaks</p>
-        </div>
-
-        {/* Main Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column: Settings */}
-          <div className="lg:col-span-1">
-            <SettingsForm />
-          </div>
-
-          {/* Right Column: Status and Controls */}
-          <div className="lg:col-span-2 space-y-6">
-            <StatusCard />
-            <Controls />
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="mt-12 pt-8 border-t border-gray-200">
-          <p className="text-center text-sm text-gray-500">
-            FocusLock v1.0 • Minimize to tray to continue running in background
-          </p>
-        </div>
-      </div>
+    <div className="h-screen flex flex-col overflow-hidden bg-bright-gray-50 dark:bg-bright-gray-900 transition-colors duration-200">
+      <TitleBar currentPage={currentPage} onNavigate={setCurrentPage} />
+      <Layout>{renderPage()}</Layout>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme={settings.theme === 'dark' ? 'dark' : 'light'}
+        className="toast-container"
+      />
     </div>
   );
 };

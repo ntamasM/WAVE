@@ -2,6 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --color-vista-blue-50: #f3faf7;
+  --color-vista-blue-100: #d6f1e5;
+  --color-vista-blue-200: #ade2cd;
+  --color-vista-blue-300: #73c8a9;
+  --color-vista-blue-400: #51b090;
+  --color-vista-blue-500: #389477;
+  --color-vista-blue-600: #2a7760;
+  --color-vista-blue-700: #25604f;
+  --color-vista-blue-800: #224d41;
+  --color-vista-blue-900: #204138;
+  --color-vista-blue-950: #0d2620;
+  --color-bright-gray-50: #f7f8f8;
+  --color-bright-gray-100: #edeef1;
+  --color-bright-gray-200: #d7dae0;
+  --color-bright-gray-300: #b4b9c5;
+  --color-bright-gray-400: #8b95a5;
+  --color-bright-gray-500: #6d788a;
+  --color-bright-gray-600: #586171;
+  --color-bright-gray-700: #484f5c;
+  --color-bright-gray-800: #3e434e;
+  --color-bright-gray-900: #373b44;
+  --color-bright-gray-950: #24262d;
+}
+
 * {
   -webkit-user-select: none;
   user-select: none;
@@ -17,12 +42,196 @@ button {
 body {
   margin: 0;
   padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu',
-    'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans',
+    'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bright-gray-100);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-bright-gray-400);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-vista-blue-500);
+}
+
+/* Toast notifications styling */
+.Toastify__toast-container {
+  z-index: 9999;
+}
+
+.Toastify__toast {
+  border-radius: 0.4rem;
+  box-shadow:
+    0 10px 15px -3px rgb(0 0 0 / 0.1),
+    0 4px 6px -4px rgb(0 0 0 / 0.1);
+  font-family: inherit;
+  padding: 1rem;
+  min-height: 64px;
+}
+
+.Toastify__toast--success {
+  background-color: var(--color-vista-blue-50);
+  color: var(--color-vista-blue-900);
+  border: 2px solid var(--color-vista-blue-400);
+}
+
+.Toastify__toast--error {
+  background-color: #fef2f2;
+  color: #991b1b;
+  border: 2px solid #f87171;
+}
+
+.Toastify__toast--warning {
+  background-color: #fffbeb;
+  color: #92400e;
+  border: 2px solid #fbbf24;
+}
+
+.Toastify__toast--info {
+  background-color: #eff6ff;
+  color: #1e40af;
+  border: 2px solid #60a5fa;
+}
+
+.Toastify__progress-bar--success {
+  background: var(--color-vista-blue-600);
+}
+
+.Toastify__progress-bar--error {
+  background: #dc2626;
+}
+
+.Toastify__progress-bar--warning {
+  background: #d97706;
+}
+
+.Toastify__progress-bar--info {
+  background: #2563eb;
+}
+
+.Toastify__close-button {
+  color: currentColor;
+  opacity: 0.7;
+}
+
+.Toastify__close-button:hover {
+  opacity: 1;
+}
+
+.Toastify__toast-container--top-right {
+  top: 3.5rem;
+  right: 1rem;
+}
+
+/* Global Component Classes */
+@layer components {
+  /* Card/Section Container */
+  .section-card {
+    @apply bg-white dark:bg-bright-gray-800 rounded-xl shadow-sm border border-bright-gray-200 dark:border-bright-gray-700 overflow-hidden transition-colors duration-200;
+  }
+
+  /* Card Header */
+  .section-header {
+    @apply bg-vista-blue-50 dark:bg-bright-gray-700 px-6 py-4 border-b border-vista-blue-200 dark:border-bright-gray-600;
+  }
+
+  /* Card Body/Content */
+  .section-body {
+    @apply px-6 py-6;
+  }
+
+  /* Section Title (h2) */
+  .section-title {
+    @apply text-3xl font-bold text-bright-gray-900 dark:text-bright-gray-100 flex items-center gap-3;
+  }
+
+  /* Section Subtitle (h3) */
+  .section-subtitle {
+    @apply text-lg font-semibold text-bright-gray-900 dark:text-bright-gray-100 flex items-center gap-2;
+  }
+
+  /* Section Description */
+  .section-description {
+    @apply mt-1 text-sm text-bright-gray-600 dark:text-bright-gray-400;
+  }
+
+  /* Form Label */
+  .form-label {
+    @apply block text-sm font-medium text-bright-gray-900 dark:text-bright-gray-100 mb-2;
+  }
+
+  /* Form Input */
+  .form-input {
+    @apply block w-full rounded-lg border-2 border-bright-gray-300 dark:border-bright-gray-600 px-4 py-2.5 text-bright-gray-900 dark:text-bright-gray-100 dark:bg-bright-gray-700 shadow-sm placeholder:text-bright-gray-400 focus:border-vista-blue-500 focus:ring-2 focus:ring-vista-blue-500 focus:ring-offset-0 sm:text-sm transition-colors duration-200;
+  }
+
+  /* Form Checkbox */
+  .form-checkbox {
+    @apply h-5 w-5 rounded border-bright-gray-300 dark:border-bright-gray-600 text-vista-blue-600 focus:ring-vista-blue-600 focus:ring-offset-0 cursor-pointer;
+  }
+
+  /* Primary Button */
+  .btn-primary {
+    @apply inline-flex items-center gap-x-2 rounded-lg bg-vista-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-vista-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-vista-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Secondary Button */
+  .btn-secondary {
+    @apply rounded-lg bg-white dark:bg-bright-gray-700 px-5 py-2.5 text-sm font-semibold text-bright-gray-900 dark:text-bright-gray-100 shadow-sm ring-1 ring-inset ring-bright-gray-300 dark:ring-bright-gray-600 hover:bg-bright-gray-50 dark:hover:bg-bright-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Text Variants */
+  .text-primary {
+    @apply text-bright-gray-900 dark:text-bright-gray-100;
+  }
+
+  .text-secondary {
+    @apply text-bright-gray-600 dark:text-bright-gray-400;
+  }
+
+  .text-muted {
+    @apply text-bright-gray-500 dark:text-bright-gray-500;
+  }
+
+  .text-accent {
+    @apply text-vista-blue-700 dark:text-vista-blue-400;
+  }
+
+  /* Icon Colors */
+  .icon-primary {
+    @apply text-vista-blue-600 dark:text-vista-blue-400;
+  }
+
+  /* Divider */
+  .divider {
+    @apply border-t border-bright-gray-200 dark:border-bright-gray-700;
+  }
+
+  /* Page Container */
+  .page-container {
+    @apply space-y-8;
+  }
+
+  /* Page Header */
+  .page-header {
+    @apply border-b border-bright-gray-200 dark:border-bright-gray-700 pb-6;
+  }
 }

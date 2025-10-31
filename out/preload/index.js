@@ -16,8 +16,22 @@ const api = {
   setAutoStart: (enabled) => electron.ipcRenderer.invoke("autostart:set", enabled),
   // App
   getVersion: () => electron.ipcRenderer.invoke("app:getVersion"),
+  // Window controls
+  minimizeWindow: () => electron.ipcRenderer.invoke("window:minimize"),
+  maximizeWindow: () => electron.ipcRenderer.invoke("window:maximize"),
+  closeWindow: () => electron.ipcRenderer.invoke("window:close"),
+  // External URLs
+  openExternal: (url) => electron.ipcRenderer.invoke("app:openExternal", url),
+  // Logs
+  openLogsFolder: () => electron.ipcRenderer.invoke("app:openLogsFolder"),
   // Lock window
   skipLock: () => electron.ipcRenderer.send("lock:skip"),
+  // Skip break during prelock prompt
+  skipBreak: () => electron.ipcRenderer.invoke("cycle:skipBreak"),
+  // Logo management
+  getAvailableLogos: () => electron.ipcRenderer.invoke("logo:getAvailable"),
+  uploadLogo: () => electron.ipcRenderer.invoke("logo:upload"),
+  resolveLogoPath: (path) => electron.ipcRenderer.invoke("logo:resolvePath", path),
   // Event listeners
   onCycleUpdate: (callback) => {
     electron.ipcRenderer.on("cycle:update", (_event, payload) => callback(payload));

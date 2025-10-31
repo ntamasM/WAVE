@@ -1,6 +1,6 @@
 {
   "name": "focuslock",
-  "version": "1.0.0",
+  "version": "0.0.5-beta",
   "description": "Minimalist Windows productivity utility that enforces breaks by locking the OS",
   "main": "out/main/index.js",
   "homepage": "./",
@@ -19,7 +19,9 @@
     "electron-store": "^8.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-icons": "^5.5.0",
     "react-router-dom": "^6.20.0",
+    "react-toastify": "^11.0.5",
     "zustand": "^4.4.0"
   },
   "devDependencies": {

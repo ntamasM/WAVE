@@ -1,106 +1,141 @@
-import React, { useState, useEffect } from 'react'
-import type { CycleStatus } from '@/shared/types'
+import React, { useState, useEffect } from 'react';
+import type { CycleStatus } from '../../shared/types';
+import { FaPause, FaPlay, FaLock, FaRedo, FaClock, FaStepForward } from 'react-icons/fa';
+import { showSuccess, showError, showInfo } from '../lib/toast';
 
 export const Controls: React.FC = () => {
-  const [status, setStatus] = useState<CycleStatus | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const [status, setStatus] = useState<CycleStatus | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    window.focusLockAPI.getCycleStatus().then(setStatus)
+    window.focusLockAPI.getCycleStatus().then(setStatus);
 
     window.focusLockAPI.onCycleUpdate((update) => {
       setStatus((prev) =>
         prev
           ? {
               ...prev,
-              ...update
+              ...update,
             }
           : null
-      )
-    })
-  }, [])
+      );
+    });
+  }, []);
 
   const handlePauseResume = async () => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
       if (status?.phase === 'paused') {
-        await window.focusLockAPI.resumeCycle()
+        await window.focusLockAPI.resumeCycle();
+        showSuccess('Cycle resumed');
       } else {
-        await window.focusLockAPI.pauseCycle()
+        await window.focusLockAPI.pauseCycle();
+        showInfo('Cycle paused');
       }
     } catch (err) {
-      console.error('Failed to pause/resume:', err)
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      showError(`Failed to ${status?.phase === 'paused' ? 'resume' : 'pause'}: ${errorMsg}`);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleLockNow = async () => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      await window.focusLockAPI.lockNow()
+      await window.focusLockAPI.lockNow();
+      showInfo('Locking screen now...');
     } catch (err) {
-      console.error('Failed to lock:', err)
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      showError(`Failed to lock: ${errorMsg}`);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleReset = async () => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      await window.focusLockAPI.resetCycle()
+      await window.focusLockAPI.resetCycle();
+      showSuccess('Cycle reset successfully');
     } catch (err) {
-      console.error('Failed to reset:', err)
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      showError(`Failed to reset: ${errorMsg}`);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
+
+  const handleSkipBreak = async () => {
+    setIsLoading(true);
+    try {
+      await window.focusLockAPI.skipBreak();
+      showSuccess('Break skipped');
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      showError(`Failed to skip break: ${errorMsg}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const isPrelockPrompt = status?.phase === 'prelockPrompt';
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">Controls</h2>
+    <div className="section-card p-6">
+      <h2 className="section-subtitle mb-6">
+        <FaClock className="icon-primary" />
+        Controls
+      </h2>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-1 md:grid-cols-2">
+      {isPrelockPrompt && (
+        <div className="mb-4 p-4 bg-vista-blue-50 dark:bg-vista-blue-900/30 border-2 border-vista-blue-400 dark:border-vista-blue-600 rounded-xl">
+          <p className="text-sm font-semibold text-vista-blue-900 dark:text-vista-blue-200 mb-3 text-center">
+            🔔 Break starting soon! You can skip this break once per cycle.
+          </p>
+          <button
+            onClick={handleSkipBreak}
+            disabled={isLoading}
+            className="w-full px-4 py-3 bg-vista-blue-600 hover:bg-vista-blue-700 dark:bg-vista-blue-700 dark:hover:bg-vista-blue-600 text-white rounded-xl font-bold transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-base"
+          >
+            <FaStepForward />
+            {isLoading ? 'Skipping...' : 'Skip This Break'}
+          </button>
+        </div>
+      )}
+
+      <div className="grid grid-cols-3 gap-3">
         <button
           onClick={handlePauseResume}
           disabled={isLoading}
-          className={`px-4 py-3 rounded-lg font-medium transition ${
+          className={`px-4 py-4 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed ${
             status?.phase === 'paused'
-              ? 'bg-green-600 hover:bg-green-700 text-white'
-              : 'bg-yellow-600 hover:bg-yellow-700 text-white'
-          } disabled:opacity-50`}
+              ? 'bg-vista-blue-500 hover:bg-vista-blue-600 dark:bg-vista-blue-600 dark:hover:bg-vista-blue-500 text-white'
+              : 'bg-bright-gray-700 hover:bg-bright-gray-800 dark:bg-bright-gray-600 dark:hover:bg-bright-gray-500 text-white'
+          }`}
         >
+          {status?.phase === 'paused' ? <FaPlay /> : <FaPause />}
           {isLoading ? 'Loading...' : status?.phase === 'paused' ? 'Resume' : 'Pause'}
         </button>
 
         <button
           onClick={handleLockNow}
           disabled={isLoading}
-          className="px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition disabled:opacity-50"
+          className="px-4 py-4 bg-vista-blue-600 hover:bg-vista-blue-700 dark:bg-vista-blue-700 dark:hover:bg-vista-blue-600 text-white rounded-xl font-semibold transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
+          <FaLock />
           {isLoading ? 'Loading...' : 'Lock Now'}
         </button>
 
         <button
           onClick={handleReset}
           disabled={isLoading}
-          className="px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition disabled:opacity-50"
+          className="px-4 py-4 bg-bright-gray-600 hover:bg-bright-gray-700 dark:bg-bright-gray-500 dark:hover:bg-bright-gray-400 text-white rounded-xl font-semibold transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
-          {isLoading ? 'Loading...' : 'Reset Cycle'}
+          <FaRedo />
+          {isLoading ? 'Loading...' : 'Reset'}
         </button>
       </div>
-
-      {/* Info */}
-      <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-900">
-        <p className="font-medium mb-2">💡 Tips:</p>
-        <ul className="list-disc list-inside space-y-1">
-          <li>Click the system tray icon to access quick controls</li>
-          <li>Pause to temporarily stop the timer</li>
-          <li>Lock Now to trigger a break immediately</li>
-          <li>Settings are auto-saved</li>
-        </ul>
-      </div>
     </div>
-  )
-}
+  );
+};

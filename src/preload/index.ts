@@ -27,8 +27,27 @@ const api = {
   // App
   getVersion: () => ipcRenderer.invoke('app:getVersion'),
 
+  // Window controls
+  minimizeWindow: () => ipcRenderer.invoke('window:minimize'),
+  maximizeWindow: () => ipcRenderer.invoke('window:maximize'),
+  closeWindow: () => ipcRenderer.invoke('window:close'),
+
+  // External URLs
+  openExternal: (url: string) => ipcRenderer.invoke('app:openExternal', url),
+
+  // Logs
+  openLogsFolder: () => ipcRenderer.invoke('app:openLogsFolder'),
+
   // Lock window
   skipLock: () => ipcRenderer.send('lock:skip'),
+
+  // Skip break during prelock prompt
+  skipBreak: () => ipcRenderer.invoke('cycle:skipBreak'),
+
+  // Logo management
+  getAvailableLogos: () => ipcRenderer.invoke('logo:getAvailable'),
+  uploadLogo: () => ipcRenderer.invoke('logo:upload'),
+  resolveLogoPath: (path: string) => ipcRenderer.invoke('logo:resolvePath', path),
 
   // Event listeners
   onCycleUpdate: (callback: (payload: import('../shared/types').CycleUpdate) => void) => {

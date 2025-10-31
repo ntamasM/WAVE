@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import './styles/index.css';
+import type { CustomizationSettings } from '../shared/types';
+import { DEFAULT_CUSTOMIZATION } from '../shared/types';
 
 // Lock Screen Component
 interface LockData {
@@ -15,8 +17,22 @@ const LockScreen: React.FC = () => {
   const [totalMs, setTotalMs] = useState<number>(0);
   const [canSkip, setCanSkip] = useState<boolean>(false);
   const [skipping, setSkipping] = useState<boolean>(false);
+  const [customization, setCustomization] = useState<CustomizationSettings>(DEFAULT_CUSTOMIZATION);
+  const [resolvedLogoUrl, setResolvedLogoUrl] = useState<string>(DEFAULT_CUSTOMIZATION.logoUrl);
 
   useEffect(() => {
+    // Load customization settings
+    window.focusLockAPI.getSettings().then(async (settings) => {
+      if (settings.customization) {
+        setCustomization(settings.customization);
+        // Resolve logo path
+        if (settings.customization.logoUrl) {
+          const resolved = await window.focusLockAPI.resolveLogoPath(settings.customization.logoUrl);
+          setResolvedLogoUrl(resolved);
+        }
+      }
+    });
+
     // Listen for initialization data
     const handleInit = (data: LockData) => {
       setTotalMs(data.lockDurationMs);
@@ -57,30 +73,42 @@ const LockScreen: React.FC = () => {
     <div
       className="min-h-screen flex items-center justify-center p-8"
       style={{
-        background: 'linear-gradient(to bottom right, #73C8A9 0%, #373B44 100%)',
+        background: `linear-gradient(135deg, ${customization.backgroundGradient.color1} 0%, ${customization.backgroundGradient.color2} 50%, ${customization.backgroundGradient.color3} 100%)`,
       }}
     >
       <div className="text-center max-w-2xl mx-auto">
         {/* Icon */}
         <div className="mb-8">
-          <div className="w-40 h-40 mx-auto flex items-center justify-center">
-            <img src="./FocusLock.png" alt="FocusLock" className="w-full h-full object-contain drop-shadow-2xl" />
+          <div className="w-40 h-40 mx-auto flex items-center justify-center bg-white/10 backdrop-blur-lg rounded-3xl p-6 shadow-2xl">
+            <img src={resolvedLogoUrl} alt="FocusLock" className="w-full h-full object-contain" />
           </div>
         </div>
 
         {/* Title */}
-        <h1 className="text-5xl font-bold text-white mb-4">Break Time</h1>
-        <p className="text-xl text-white/80 mb-12">Time to rest your eyes and stretch</p>
+        <h1 className="text-6xl font-bold mb-4 drop-shadow-lg" style={{ color: customization.breakTitle.color }}>
+          {customization.breakTitle.text}
+        </h1>
+        <p className="text-2xl mb-12 font-medium" style={{ color: customization.breakSubtitle.color }}>
+          {customization.breakSubtitle.text}
+        </p>
 
         {/* Timer */}
         <div className="mb-12">
-          <div className="text-8xl font-bold text-white mb-6 font-mono">{formatTime(remainingMs)}</div>
+          <div
+            className="text-9xl font-bold mb-8 font-mono drop-shadow-2xl"
+            style={{ color: customization.timerColor }}
+          >
+            {formatTime(remainingMs)}
+          </div>
 
           {/* Progress Bar */}
-          <div className="w-full max-w-md mx-auto bg-white/20 rounded-full h-4 overflow-hidden">
+          <div className="w-full max-w-md mx-auto bg-white/20 backdrop-blur-sm rounded-full h-5 overflow-hidden shadow-lg border-2 border-white/30">
             <div
-              className="h-full bg-gradient-to-r from-green-400 to-blue-500 transition-all duration-1000 ease-linear"
-              style={{ width: `${progressPercent}%` }}
+              className="h-full transition-all duration-1000 ease-linear shadow-inner"
+              style={{
+                width: `${progressPercent}%`,
+                backgroundColor: customization.progressBarColor,
+              }}
             />
           </div>
         </div>
@@ -90,13 +118,13 @@ const LockScreen: React.FC = () => {
           <button
             onClick={handleSkip}
             disabled={skipping}
-            className={`px-8 py-4 backdrop-blur-lg text-white text-lg font-semibold rounded-xl transition-all duration-200 border-2 border-white/30 ${
-              skipping
-                ? 'bg-white/10 cursor-not-allowed opacity-50'
-                : 'bg-white/20 hover:bg-white/30 hover:scale-105 active:scale-95'
-            }`}
+            className="px-10 py-5 backdrop-blur-xl text-xl font-bold rounded-2xl transition-all duration-200 border-3 border-white/40 shadow-2xl hover:scale-105 active:scale-95 hover:border-white/60 disabled:cursor-not-allowed disabled:opacity-50"
+            style={{
+              color: customization.skipButton.textColor,
+              backgroundColor: skipping ? 'rgba(255, 255, 255, 0.1)' : customization.skipButton.backgroundColor,
+            }}
           >
-            {skipping ? 'Closing...' : 'Skip Break'}
+            {skipping ? 'Closing...' : customization.skipButton.text}
           </button>
         )}
       </div>
@@ -106,11 +134,22 @@ const LockScreen: React.FC = () => {
 
 // Blank Screen Component for secondary displays
 const BlankScreen: React.FC = () => {
+  const [customization, setCustomization] = useState<CustomizationSettings>(DEFAULT_CUSTOMIZATION);
+
+  useEffect(() => {
+    // Load customization settings
+    window.focusLockAPI.getSettings().then((settings) => {
+      if (settings.customization) {
+        setCustomization(settings.customization);
+      }
+    });
+  }, []);
+
   return (
     <div
       className="min-h-screen"
       style={{
-        background: 'linear-gradient(to bottom right, #73C8A9 0%, #373B44 100%)',
+        background: `linear-gradient(135deg, ${customization.backgroundGradient.color1} 0%, ${customization.backgroundGradient.color2} 50%, ${customization.backgroundGradient.color3} 100%)`,
       }}
     />
   );
