@@ -161,15 +161,15 @@ export function handleIPC(settingsStore: SettingsStore, cycleManager: CycleManag
    */
   ipcMain.handle('logo:getAvailable', async () => {
     try {
-      const logosDir = path.join(app.getPath('userData'), 'logos');
+      const mediaDir = path.join(app.getPath('userData'), 'media');
 
-      // Ensure logos directory exists
-      if (!existsSync(logosDir)) {
-        await fs.mkdir(logosDir, { recursive: true });
+      // Ensure media directory exists
+      if (!existsSync(mediaDir)) {
+        await fs.mkdir(mediaDir, { recursive: true });
         return [];
       }
 
-      const files = await fs.readdir(logosDir);
+      const files = await fs.readdir(mediaDir);
       const imageFiles = files.filter((file) => {
         const ext = path.extname(file).toLowerCase();
         return ['.png', '.jpg', '.jpeg', '.svg', '.gif'].includes(ext);
@@ -179,7 +179,7 @@ export function handleIPC(settingsStore: SettingsStore, cycleManager: CycleManag
       return imageFiles.map((file) => `./${file}`);
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-      logger.error('Failed to get available logos', new Error(errorMsg));
+      logger.error('Failed to get available media', new Error(errorMsg));
       return [];
     }
   });
@@ -198,14 +198,14 @@ export function handleIPC(settingsStore: SettingsStore, cycleManager: CycleManag
 
       const sourcePath = result.filePaths[0];
       const fileName = path.basename(sourcePath);
-      const logosDir = path.join(app.getPath('userData'), 'logos');
+      const mediaDir = path.join(app.getPath('userData'), 'media');
 
-      // Ensure logos directory exists
-      if (!existsSync(logosDir)) {
-        await fs.mkdir(logosDir, { recursive: true });
+      // Ensure media directory exists
+      if (!existsSync(mediaDir)) {
+        await fs.mkdir(mediaDir, { recursive: true });
       }
 
-      const destPath = path.join(logosDir, fileName);
+      const destPath = path.join(mediaDir, fileName);
 
       // Copy the file
       await fs.copyFile(sourcePath, destPath);
@@ -223,26 +223,24 @@ export function handleIPC(settingsStore: SettingsStore, cycleManager: CycleManag
     try {
       logger.info(`Resolving logo path: ${relativePath}`);
 
+      // Clean up the path (strip leading/trailing slashes and whitespace)
+      const cleanPath = relativePath
+        .trim()
+        .replace(/^\.?\/+/, '')
+        .replace(/\/+$/, '');
+
       // If it's an absolute URL or path, return as is
       if (
         relativePath.startsWith('http://') ||
         relativePath.startsWith('https://') ||
-        relativePath.startsWith('focuslock-logo://')
+        relativePath.startsWith('media://')
       ) {
         logger.info(`Already absolute: ${relativePath}`);
         return relativePath;
       }
 
-      // If it starts with ./, resolve from logos directory using custom protocol
-      if (relativePath.startsWith('./')) {
-        const fileName = relativePath.substring(2);
-        const resolved = `focuslock-logo://${fileName}`;
-        logger.info(`Resolved ${relativePath} to ${resolved}`);
-        return resolved;
-      }
-
-      // Default: use custom protocol
-      const resolved = `focuslock-logo://${relativePath}`;
+      // Return media:// protocol URL (the protocol handler will resolve the actual file)
+      const resolved = `media://${cleanPath}`;
       logger.info(`Resolved ${relativePath} to ${resolved}`);
       return resolved;
     } catch (error) {

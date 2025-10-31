@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, Tray, nativeImage, powerMonitor, protocol } from 'electron';
+import { app, BrowserWindow, Menu, Tray, nativeImage, powerMonitor, protocol, net } from 'electron';
 import { join } from 'path';
 import { is } from '@electron-toolkit/utils';
 import { Logger } from './logger';
@@ -7,7 +7,7 @@ import { CycleManager } from './cycle-manager';
 import { handleIPC } from './ipc';
 import { setAutoStart, getAutoStart } from './autostart';
 import fs from 'fs/promises';
-import { existsSync, readFileSync } from 'fs';
+import { existsSync } from 'fs';
 
 const logger = new Logger('main');
 let mainWindow: BrowserWindow | null = null;
@@ -64,29 +64,14 @@ const createWindow = (): void => {
     }
   });
 
-  // Debug: Log all requests to see if focuslock-logo:// is being requested
-  mainWindow.webContents.session.webRequest.onBeforeRequest((details, callback) => {
-    if (details.url.startsWith('focuslock-logo://')) {
-      logger.info(`Request intercepted: ${details.url}`);
-    }
-    callback({});
-  });
-
-  // Enforce CSP - allow custom logo protocol
+  // Override CSP to allow media:// protocol for images
   mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
     const headers = { ...details.responseHeaders };
 
-    // Log CSP headers for debugging
-    if (headers['Content-Security-Policy']) {
-      logger.info(`Original CSP: ${headers['Content-Security-Policy']}`);
-    }
-
-    // Completely override CSP for all requests
+    // Override CSP to allow media:// custom protocol for images
     headers['Content-Security-Policy'] = [
-      "default-src 'self' 'unsafe-inline' 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' focuslock-logo: data: http: https: blob:;",
+      "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: media:;",
     ];
-
-    logger.info(`Modified CSP: ${headers['Content-Security-Policy']}`);
 
     callback({ responseHeaders: headers });
   });
@@ -180,109 +165,92 @@ const initializeCycleManager = (): void => {
   logger.info(`Cycle manager initialized: workHours=${settings.workHours}, lockMinutes=${settings.lockMinutes}`);
 };
 
-const initializeLogosDirectory = async (): Promise<void> => {
+const initializeMediaDirectory = async (): Promise<void> => {
   try {
-    const logosDir = join(app.getPath('userData'), 'logos');
+    const mediaDir = join(app.getPath('userData'), 'media');
 
-    // Create logos directory if it doesn't exist
-    if (!existsSync(logosDir)) {
-      await fs.mkdir(logosDir, { recursive: true });
-      logger.info('Created logos directory');
+    // Create media directory if it doesn't exist
+    if (!existsSync(mediaDir)) {
+      await fs.mkdir(mediaDir, { recursive: true });
+      logger.info('Created media directory');
     }
 
-    // Copy default logo if it doesn't exist
-    const defaultLogoName = 'FocusLock.png';
-    const destPath = join(logosDir, defaultLogoName);
+    // Copy default logo and any bundled media if they don't exist
+    const defaultMedia = ['FocusLock.png'];
 
-    if (!existsSync(destPath)) {
-      const sourcePath = join(__dirname, '../../resources/FocusLock.png');
-      if (existsSync(sourcePath)) {
-        await fs.copyFile(sourcePath, destPath);
-        logger.info('Copied default logo to logos directory');
+    for (const fileName of defaultMedia) {
+      const destPath = join(mediaDir, fileName);
+      if (!existsSync(destPath)) {
+        const sourcePath = join(__dirname, '../../resources/media', fileName);
+        // If not in media folder, try resources root
+        const fallbackPath = join(__dirname, '../../resources', fileName);
+
+        if (existsSync(sourcePath)) {
+          await fs.copyFile(sourcePath, destPath);
+          logger.info(`Copied ${fileName} to media directory from media folder`);
+        } else if (existsSync(fallbackPath)) {
+          await fs.copyFile(fallbackPath, destPath);
+          logger.info(`Copied ${fileName} to media directory from resources`);
+        }
       }
     }
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-    logger.error('Failed to initialize logos directory', new Error(errorMsg));
+    logger.error('Failed to initialize media directory', new Error(errorMsg));
   }
 };
 
-const registerLogoProtocol = (): void => {
-  // Register a custom protocol to serve logo files using Buffer protocol for better control
-  protocol.registerBufferProtocol('focuslock-logo', (request, callback) => {
-    try {
-      // Remove protocol and clean up any trailing slashes
-      const url = request.url.replace('focuslock-logo://', '').replace(/\/$/, '');
-      const logosDir = join(app.getPath('userData'), 'logos');
-      const filePath = join(logosDir, url);
-
-      logger.info(`Logo protocol request: ${request.url} -> ${filePath}`);
-
-      let targetPath: string | null = null;
-
-      if (existsSync(filePath)) {
-        logger.info(`Serving logo from: ${filePath}`);
-        targetPath = filePath;
-      } else {
-        // Fallback to resources directory
-        const resourcePath = join(__dirname, '../../resources', url);
-        if (existsSync(resourcePath)) {
-          logger.info(`Serving logo from resources: ${resourcePath}`);
-          targetPath = resourcePath;
-        }
-      }
-
-      if (targetPath) {
-        const data = readFileSync(targetPath);
-        // Determine MIME type based on file extension
-        const ext = targetPath.toLowerCase().split('.').pop();
-        let mimeType = 'application/octet-stream';
-        if (ext === 'png') mimeType = 'image/png';
-        else if (ext === 'jpg' || ext === 'jpeg') mimeType = 'image/jpeg';
-        else if (ext === 'svg') mimeType = 'image/svg+xml';
-        else if (ext === 'gif') mimeType = 'image/gif';
-
-        logger.info(`Serving ${targetPath} as ${mimeType}`);
-        callback({ data, mimeType });
-      } else {
-        logger.error(`Logo file not found: ${url} (tried ${filePath})`);
-        callback({ error: -6 }); // FILE_NOT_FOUND
-      }
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-      logger.error('Failed to serve logo file', new Error(errorMsg));
-      callback({ error: -2 }); // FAILED
-    }
-  });
-
-  logger.info('Logo protocol registered successfully');
-}; // Register custom protocol before app is ready - this must be done synchronously
-if (protocol.registerSchemesAsPrivileged) {
-  protocol.registerSchemesAsPrivileged([
-    {
-      scheme: 'focuslock-logo',
-      privileges: {
-        secure: true,
-        standard: true,
-        supportFetchAPI: true,
-        corsEnabled: false,
-      },
+// Register custom protocol scheme before app is ready
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: 'media',
+    privileges: {
+      secure: true,
+      standard: true,
+      supportFetchAPI: true,
+      corsEnabled: false,
+      bypassCSP: false,
     },
-  ]);
-}
+  },
+]);
 
 app.on('ready', async () => {
   logger.info('App starting...');
 
-  // Register the protocol handler
-  registerLogoProtocol();
+  // Register media protocol handler
+  protocol.handle('media', async (request) => {
+    try {
+      // Remove protocol and clean up the URL (strip trailing slashes)
+      const url = request.url.replace('media://', '').replace(/\/+$/, '');
+      const mediaDir = join(app.getPath('userData'), 'media');
+
+      // Try user media directory first
+      let filePath = join(mediaDir, url);
+
+      if (!existsSync(filePath)) {
+        // Fallback to bundled resources
+        filePath = join(__dirname, '../../resources/media', url);
+      }
+
+      if (!existsSync(filePath)) {
+        logger.error(`Media file not found: ${url}`);
+        return new Response('File not found', { status: 404 });
+      }
+
+      logger.info(`Serving media: ${filePath}`);
+      return net.fetch(`file://${filePath}`);
+    } catch (error) {
+      logger.error('Error serving media file', error as Error);
+      return new Response('Internal error', { status: 500 });
+    }
+  });
 
   createSingleInstance();
   createWindow();
   createTray();
 
-  // Initialize logos directory
-  await initializeLogosDirectory();
+  // Initialize media directory
+  await initializeMediaDirectory();
 
   // Initialize cycle manager FIRST
   initializeCycleManager();

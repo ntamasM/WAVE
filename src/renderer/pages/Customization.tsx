@@ -4,6 +4,7 @@ import { updateSettings } from '../store/useSettings';
 import { DEFAULT_CUSTOMIZATION } from '../../shared/types';
 import type { CustomizationSettings } from '../../shared/types';
 import { showSuccess, showError, showInfo } from '../lib/toast';
+import { Separator } from '../components/Separator';
 import {
   FaPalette,
   FaImage,
@@ -273,6 +274,8 @@ export const Customization: React.FC = () => {
                 </div>
               </div>
 
+              <Separator className="my-6" />
+
               {/* Break Subtitle */}
               <div>
                 <label className="form-label">Break Subtitle</label>
@@ -309,6 +312,8 @@ export const Customization: React.FC = () => {
               </div>
             </div>
 
+            <Separator className="my-6" />
+
             {/* Logo Section */}
             <div>
               <label className="form-label">
@@ -328,7 +333,7 @@ export const Customization: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsLogoModalOpen(true)}
-                  className="btn-secondary whitespace-nowrap"
+                  className="btn-secondary whitespace-nowrap flex items-center gap-2"
                 >
                   <FaImage className="-ml-0.5 h-4 w-4" />
                   Choose Logo
@@ -337,7 +342,7 @@ export const Customization: React.FC = () => {
               {localCustomization.logoUrl && resolvedLogoUrl && (
                 <div className="mt-3">
                   <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Preview:</p>
-                  <div className="w-24 h-24 border border-gray-300 dark:border-gray-600 rounded-lg flex items-center justify-center bg-gray-50 dark:bg-gray-800">
+                  <div className="w-24 h-24 border flex items-center justify-center border-none">
                     <img
                       src={resolvedLogoUrl}
                       alt="Logo preview"
@@ -350,6 +355,8 @@ export const Customization: React.FC = () => {
                 </div>
               )}
             </div>
+
+            <Separator className="my-6" />
 
             {/* Skip Button Section */}
             <div>
@@ -417,6 +424,8 @@ export const Customization: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            <Separator className="my-6" />
 
             {/* Timer & Progress Bar Section */}
             <div>
