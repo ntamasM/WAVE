@@ -1,0 +1,25 @@
+appId: 'com.focuslock'
+productName: 'FocusLock'
+directories:
+  buildResources: resources
+  output: dist
+files:
+  - from: .
+    to: .
+    filter:
+      - '!**/*.map'
+      - '!dist/*'
+      - '!node_modules'
+win:
+  target:
+    - nsis
+  icon: resources/FocusLock.png
+  certificateFile: null
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: FocusLock
+  installerIcon: resources/FocusLock.png
+  uninstallerIcon: resources/FocusLock.png

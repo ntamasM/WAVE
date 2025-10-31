@@ -1,0 +1,45 @@
+{
+  "name": "focuslock",
+  "version": "1.0.0",
+  "description": "Minimalist Windows productivity utility that enforces breaks by locking the OS",
+  "main": "out/main/index.js",
+  "homepage": "./",
+  "author": "Manolis Ntamadakis <https://ntamadakis.gr/>",
+  "license": "MIT",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "lint": "eslint src --ext .ts,.tsx",
+    "format": "prettier --write .",
+    "preview": "electron-vite preview",
+    "package:win": "npm run build && electron-builder --win",
+    "dist:win": "npm run package:win"
+  },
+  "dependencies": {
+    "electron-store": "^8.1.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.20.0",
+    "zustand": "^4.4.0"
+  },
+  "devDependencies": {
+    "@electron-toolkit/preload": "^3.0.0",
+    "@electron-toolkit/utils": "^3.0.0",
+    "@types/node": "^20.10.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@typescript-eslint/eslint-plugin": "^6.13.0",
+    "@typescript-eslint/parser": "^6.13.0",
+    "@vitejs/plugin-react": "^4.2.0",
+    "autoprefixer": "^10.4.16",
+    "electron": "^39.0.0",
+    "electron-builder": "^24.6.4",
+    "electron-vite": "^2.0.0",
+    "eslint": "^8.55.0",
+    "postcss": "^8.4.32",
+    "prettier": "^3.1.0",
+    "tailwindcss": "^3.3.6",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.7"
+  }
+}

@@ -1,0 +1,34 @@
+import react from '@vitejs/plugin-react';
+import { defineConfig } from 'electron-vite';
+import { resolve } from 'path';
+
+export default defineConfig({
+  main: {
+    build: {
+      outDir: 'dist/main',
+      rollupOptions: {
+        input: {
+          index: resolve(__dirname, 'src/main/index.ts'),
+        },
+      },
+    },
+  },
+  preload: {
+    build: {
+      outDir: 'dist/preload',
+      rollupOptions: {
+        input: {
+          index: resolve(__dirname, 'src/preload/index.ts'),
+        },
+      },
+    },
+  },
+  renderer: {
+    resolve: {
+      alias: {
+        '@': resolve('src/renderer'),
+      },
+    },
+    plugins: [react()],
+  },
+});
