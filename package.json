@@ -12,8 +12,11 @@
     "lint": "eslint src --ext .ts,.tsx",
     "format": "prettier --write .",
     "preview": "electron-vite preview",
-    "package:win": "npm run build && electron-builder --win",
-    "dist:win": "npm run package:win"
+    "build:win": "pnpm run build && electron-builder --win --x64",
+    "build:win:portable": "pnpm run build && electron-builder --win portable --x64",
+    "build:win:installer": "pnpm run build && electron-builder --win nsis --x64",
+    "package:win": "pnpm run build && electron-builder --win",
+    "dist:win": "pnpm run package:win"
   },
   "dependencies": {
     "electron-store": "^8.1.0",

@@ -12,16 +12,31 @@ files:
       - '!node_modules'
 win:
   target:
-    - portable
+    - target: nsis
+      arch:
+        - x64
+    - target: portable
+      arch:
+        - x64
   icon: resources/FocusLock.png
   certificateFile: null
   sign: null
   signingHashAlgorithms: []
+  artifactName: '${productName}-${version}-${arch}-setup.${ext}'
+  publisherName: 'Manolis Ntamadakis'
+  verifyUpdateCodeSignature: false
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
+  allowElevation: true
   createDesktopShortcut: true
   createStartMenuShortcut: true
   shortcutName: FocusLock
-  installerIcon: resources/FocusLock.png
-  uninstallerIcon: resources/FocusLock.png
+  license: LICENSE
+  deleteAppDataOnUninstall: false
+  runAfterFinish: true
+  menuCategory: true
+  displayLanguageSelector: false
+  artifactName: '${productName}-${version}-setup.${ext}'
+portable:
+  artifactName: '${productName}-${version}-portable.${ext}'
