@@ -25,7 +25,6 @@ export interface CustomizationSettings {
 export interface Settings {
   workHours: number;
   lockMinutes: number;
-  canSkip: boolean;
   showSkipButton: boolean;
   startWithWindows: boolean;
   enableLogging: boolean;
@@ -73,7 +72,6 @@ export const DEFAULT_CUSTOMIZATION: CustomizationSettings = {
 export const DEFAULT_SETTINGS: Settings = {
   workHours: 2.0,
   lockMinutes: 5,
-  canSkip: true,
   showSkipButton: true,
   startWithWindows: false,
   enableLogging: false,

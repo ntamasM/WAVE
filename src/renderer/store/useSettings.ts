@@ -9,7 +9,7 @@ import type { Settings } from '../../shared/types';
 const initialSettings: Settings = {
   workHours: 2.0,
   lockMinutes: 5,
-  canSkip: true,
+  showSkipButton: true,
   startWithWindows: true,
   enableLogging: true,
   theme: 'light',

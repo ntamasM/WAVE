@@ -19,10 +19,6 @@ export class SettingsStore {
           minimum: 1,
           maximum: 60,
         },
-        canSkip: {
-          type: 'boolean',
-          default: DEFAULT_SETTINGS.canSkip,
-        },
         showSkipButton: {
           type: 'boolean',
           default: DEFAULT_SETTINGS.showSkipButton,
@@ -54,7 +50,6 @@ export class SettingsStore {
     return {
       workHours: this.store.get('workHours') as number,
       lockMinutes: this.store.get('lockMinutes') as number,
-      canSkip: this.store.get('canSkip') as boolean,
       showSkipButton: this.store.get('showSkipButton', DEFAULT_SETTINGS.showSkipButton) as boolean,
       startWithWindows: this.store.get('startWithWindows') as boolean,
       enableLogging: this.store.get('enableLogging') as boolean,

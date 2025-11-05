@@ -44,10 +44,6 @@ export function validateSettingsInput(settings: Partial<Settings>): { valid: boo
     }
   }
 
-  if (settings.canSkip !== undefined && typeof settings.canSkip !== 'boolean') {
-    errors.push('canSkip must be a boolean');
-  }
-
   if (settings.showSkipButton !== undefined && typeof settings.showSkipButton !== 'boolean') {
     errors.push('showSkipButton must be a boolean');
   }
