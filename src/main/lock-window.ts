@@ -10,14 +10,14 @@ export class LockWindow {
   private windows: BrowserWindow[] = [];
   private displayBounds: Map<BrowserWindow, { x: number; y: number; width: number; height: number }> = new Map();
 
-  create(lockDurationMs: number, canSkip: boolean): BrowserWindow {
-    logger.info(`Creating lock windows with duration: ${lockDurationMs}ms, canSkip: ${canSkip}`);
+  create(lockDurationMs: number, showSkipButton: boolean): BrowserWindow {
+    logger.info(`Creating lock windows with duration: ${lockDurationMs}ms, showSkipButton: ${showSkipButton}`);
 
     // Get all displays
     const displays = screen.getAllDisplays();
     logger.info(`Found ${displays.length} display(s)`);
 
-    const iconPath = getAppAssetPath(__dirname, 'FocusLock.png');
+    const iconPath = getAppAssetPath(__dirname, 'Wave.png');
 
     // Create a lock window for each display
     displays.forEach((display, index) => {
@@ -55,7 +55,7 @@ export class LockWindow {
           sandbox: true,
         },
         icon: iconPath,
-        title: 'FocusLock - Break Time',
+        title: 'WAVE - Break Time',
       });
 
       // Prevent the window from being closed
@@ -77,7 +77,7 @@ export class LockWindow {
       window.webContents.on('did-finish-load', () => {
         window.webContents.send('lock:init', {
           lockDurationMs,
-          canSkip,
+          showSkipButton,
           startTime: Date.now(),
         });
 

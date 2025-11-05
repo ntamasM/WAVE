@@ -11,7 +11,7 @@ export const TitleBar: React.FC<TitleBarProps> = ({ currentPage, onNavigate }) =
 
   useEffect(() => {
     // Resolve the app logo path
-    window.focusLockAPI.resolveLogoPath('./FocusLock.png').then((resolved) => {
+    window.waveAPI.resolveLogoPath('./Wave.png').then((resolved) => {
       setLogoUrl(resolved);
     });
   }, []);
@@ -24,15 +24,15 @@ export const TitleBar: React.FC<TitleBarProps> = ({ currentPage, onNavigate }) =
   ];
 
   const handleMinimize = () => {
-    window.focusLockAPI?.minimizeWindow?.();
+    window.waveAPI?.minimizeWindow?.();
   };
 
   const handleMaximize = () => {
-    window.focusLockAPI?.maximizeWindow?.();
+    window.waveAPI?.maximizeWindow?.();
   };
 
   const handleClose = () => {
-    window.focusLockAPI?.closeWindow?.();
+    window.waveAPI?.closeWindow?.();
   };
 
   return (
@@ -43,8 +43,8 @@ export const TitleBar: React.FC<TitleBarProps> = ({ currentPage, onNavigate }) =
       >
         {/* Left: App Logo and Title */}
         <div className="flex items-center gap-3 px-4">
-          {logoUrl && <img src={logoUrl} alt="FocusLock" className="w-6 h-6 object-contain" />}
-          <span className="font-bold text-lg text-vista-blue-300">FocusLock</span>
+          {logoUrl && <img src={logoUrl} alt="Wave" className="w-6 h-6 object-contain" />}
+          <span className="font-bold text-lg text-vista-blue-300">Wave</span>
         </div>
 
         {/* Center: Navigation */}

@@ -149,14 +149,6 @@ export function handleIPC(settingsStore: SettingsStore, cycleManager: CycleManag
   });
 
   /**
-   * Skip break during prelock prompt
-   */
-  ipcMain.handle('cycle:skipBreak', () => {
-    cycleManager.skipBreak();
-    logger.info('Break skipped via IPC');
-  });
-
-  /**
    * Logo management endpoints
    */
   ipcMain.handle('logo:getAvailable', async () => {

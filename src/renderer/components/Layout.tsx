@@ -16,7 +16,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       <div className="border-t border-bright-gray-200 dark:border-bright-gray-700 bg-white dark:bg-bright-gray-800 transition-colors duration-200">
         <div className="max-w-7xl mx-auto px-6 py-3">
           <p className="text-center text-sm text-bright-gray-500 dark:text-bright-gray-400">
-            FocusLock v1.0 • Minimize to tray to continue running in background
+            WAVE v1.0 • Minimize to tray to continue running in background
           </p>
         </div>
       </div>

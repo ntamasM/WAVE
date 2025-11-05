@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, Tray, nativeImage, powerMonitor, protocol, net } from 'electron';
+import { app, BrowserWindow, Menu, Tray, nativeImage, powerMonitor, protocol, net, globalShortcut } from 'electron';
 import { join } from 'path';
 import { is } from '@electron-toolkit/utils';
 import { Logger } from './logger';
@@ -18,7 +18,7 @@ let cycleManager: CycleManager | null = null;
 let isQuitting = false;
 
 const createWindow = (): void => {
-  const iconPath = getAppAssetPath(__dirname, 'FocusLock.png');
+  const iconPath = getAppAssetPath(__dirname, 'Wave.png');
   mainWindow = new BrowserWindow({
     width: 1500,
     height: 700,
@@ -78,15 +78,41 @@ const createWindow = (): void => {
   });
 };
 
-const createTray = (): void => {
-  const iconPath = getAppAssetPath(__dirname, 'FocusLock.png');
-  const icon = nativeImage.createFromPath(iconPath);
-  // Resize icon for tray (16x16 is standard for Windows tray)
-  const trayIcon = icon.resize({ width: 16, height: 16 });
-  tray = new Tray(trayIcon);
-  tray.setToolTip('FocusLock');
+const formatTime = (ms: number): string => {
+  const totalSeconds = Math.ceil(ms / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  } else if (minutes > 0) {
+    return `${minutes}m ${seconds}s`;
+  } else {
+    return `${seconds}s`;
+  }
+};
+
+const updateTrayMenu = (): void => {
+  if (!tray || !cycleManager) return;
+
+  const status = cycleManager.getStatus();
+  let timeLabel = 'Time until lock: N/A';
+
+  if (status.phase === 'work' && status.remainingMs > 0) {
+    timeLabel = `Time until lock: ${formatTime(status.remainingMs)}`;
+  } else if (status.phase === 'break') {
+    timeLabel = `Break time: ${formatTime(status.remainingMs)}`;
+  } else if (status.phase === 'paused') {
+    timeLabel = 'Cycle Paused';
+  }
 
   const contextMenu = Menu.buildFromTemplate([
+    {
+      label: timeLabel,
+      enabled: false, // Make it non-clickable (display only)
+    },
+    { type: 'separator' },
     {
       label: 'Dashboard',
       click: () => {
@@ -103,12 +129,14 @@ const createTray = (): void => {
       label: 'Pause Cycle',
       click: () => {
         cycleManager?.pause();
+        updateTrayMenu(); // Update immediately after pause
       },
     },
     {
       label: 'Resume Cycle',
       click: () => {
         cycleManager?.resume();
+        updateTrayMenu(); // Update immediately after resume
       },
     },
     {
@@ -128,6 +156,17 @@ const createTray = (): void => {
   ]);
 
   tray.setContextMenu(contextMenu);
+};
+
+const createTray = (): void => {
+  const iconPath = getAppAssetPath(__dirname, 'Wave.png');
+  const icon = nativeImage.createFromPath(iconPath);
+  // Resize icon for tray (16x16 is standard for Windows tray)
+  const trayIcon = icon.resize({ width: 16, height: 16 });
+  tray = new Tray(trayIcon);
+  tray.setToolTip('WAVE');
+
+  updateTrayMenu();
 
   tray.on('double-click', () => {
     if (mainWindow) {
@@ -137,6 +176,11 @@ const createTray = (): void => {
       createWindow();
     }
   });
+
+  // Update tray menu every second to keep the timer current
+  setInterval(() => {
+    updateTrayMenu();
+  }, 1000);
 };
 
 const createSingleInstance = (): void => {
@@ -177,7 +221,7 @@ const initializeMediaDirectory = async (): Promise<void> => {
     }
 
     // Copy default logo and any bundled media if they don't exist
-    const defaultMedia = ['FocusLock.png'];
+    const defaultMedia = ['Wave.png'];
 
     for (const fileName of defaultMedia) {
       const destPath = join(mediaDir, fileName);
@@ -286,6 +330,20 @@ app.on('ready', async () => {
   // Setup IPC handlers AFTER cycle manager is initialized
   handleIPC(settingsStore, cycleManager!);
 
+  // Register global shortcut to skip lock (Ctrl+Shift+U+L)
+  const shortcutRegistered = globalShortcut.register('CommandOrControl+Shift+U+L', () => {
+    logger.info('Global shortcut triggered: Ctrl+Shift+U+L - Skipping lock');
+    if (cycleManager) {
+      cycleManager.skipLock();
+    }
+  });
+
+  if (shortcutRegistered) {
+    logger.info('Global shortcut registered: Ctrl+Shift+U+L');
+  } else {
+    logger.error('Failed to register global shortcut: Ctrl+Shift+U+L');
+  }
+
   // Restore autostart state
   const settings = settingsStore.getSettings();
   const currentAutoStart = getAutoStart();
@@ -322,6 +380,8 @@ app.on('before-quit', () => {
   if (tray) {
     tray.destroy();
   }
+  // Unregister all global shortcuts
+  globalShortcut.unregisterAll();
 });
 
 // Notify renderer of sleep/resume

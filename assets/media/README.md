@@ -1,12 +1,12 @@
 # Default Media
 
-This folder contains the default media assets bundled with FocusLock.
+This folder contains the default media assets bundled with WAVE.
 
 ## User Media Directory
 
 When the application runs, it creates a `media` folder in your user data directory:
 
-**Location**: `%APPDATA%\focuslock\media`
+**Location**: `%APPDATA%\wave\media`
 
 ## How It Works
 

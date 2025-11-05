@@ -1,12 +1,12 @@
 # Assets Folder
 
-This folder contains all assets used by the FocusLock application.
+This folder contains all assets used by the WAVE application.
 
 ## Structure
 
 - **app-media/** - Private application assets (logos, icons, etc.)
   - These files are used internally by the application
-  - Contains the app logo (FocusLock.png, FocusLock.svg)
+  - Contains the app logo (Wave.png, Wave.svg)
 - **media/** - Default user media
   - Contains default images bundled with the app
   - These files are copied to the user's media directory on first run

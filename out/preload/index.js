@@ -26,8 +26,6 @@ const api = {
   openLogsFolder: () => electron.ipcRenderer.invoke("app:openLogsFolder"),
   // Lock window
   skipLock: () => electron.ipcRenderer.send("lock:skip"),
-  // Skip break during prelock prompt
-  skipBreak: () => electron.ipcRenderer.invoke("cycle:skipBreak"),
   // Logo management
   getAvailableLogos: () => electron.ipcRenderer.invoke("logo:getAvailable"),
   uploadLogo: () => electron.ipcRenderer.invoke("logo:upload"),
@@ -56,4 +54,4 @@ const api = {
     electron.ipcRenderer.removeAllListeners(channel);
   }
 };
-electron.contextBridge.exposeInMainWorld("focusLockAPI", api);
+electron.contextBridge.exposeInMainWorld("waveAPI", api);

@@ -23,6 +23,10 @@ export class SettingsStore {
           type: 'boolean',
           default: DEFAULT_SETTINGS.canSkip,
         },
+        showSkipButton: {
+          type: 'boolean',
+          default: DEFAULT_SETTINGS.showSkipButton,
+        },
         startWithWindows: {
           type: 'boolean',
           default: DEFAULT_SETTINGS.startWithWindows,
@@ -42,7 +46,7 @@ export class SettingsStore {
         },
       },
       defaults: DEFAULT_SETTINGS,
-      name: 'focuslock-settings',
+      name: 'wave-settings',
     });
   }
 
@@ -51,6 +55,7 @@ export class SettingsStore {
       workHours: this.store.get('workHours') as number,
       lockMinutes: this.store.get('lockMinutes') as number,
       canSkip: this.store.get('canSkip') as boolean,
+      showSkipButton: this.store.get('showSkipButton', DEFAULT_SETTINGS.showSkipButton) as boolean,
       startWithWindows: this.store.get('startWithWindows') as boolean,
       enableLogging: this.store.get('enableLogging') as boolean,
       theme: (this.store.get('theme') as 'light' | 'dark') || 'light',

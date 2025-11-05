@@ -6,22 +6,21 @@ export const About: React.FC = () => {
 
   useEffect(() => {
     // Resolve the app logo path
-    window.focusLockAPI.resolveLogoPath('./FocusLock.png').then((resolved) => {
+    window.waveAPI.resolveLogoPath('./Wave.png').then((resolved) => {
       setLogoUrl(resolved);
     });
   }, []);
 
   const handleOpenExternal = (url: string) => {
-    window.focusLockAPI.openExternal(url);
+    window.waveAPI.openExternal(url);
   };
   return (
     <div className="page-container max-w-3xl mx-auto">
       <div className="section-card p-8 space-y-8">
         {/* App Info */}
         <div className="text-center">
-          <div className="bg-vista-blue-50 dark:bg-vista-blue-900/20 rounded-2xl p-6 inline-block mb-4">
-            {logoUrl && <img src={logoUrl} alt="WAVE" className="w-24 h-24 object-contain mx-auto" />}
-          </div>
+          {logoUrl && <img src={logoUrl} alt="WAVE" className="w-32 h-32 object-contain mx-auto mb-2" />}
+
           <h1 className="text-4xl font-bold text-primary mb-2">WAVE</h1>
           <p className="text-secondary text-lg">
             Work And Vital Energy - Enforce focus through automated OS-level breaks
@@ -61,10 +60,7 @@ export const About: React.FC = () => {
               <FaLock className="icon-primary mt-1 flex-shrink-0" />
               <span>Beautiful Lock Screen with branded gradient and timer countdown</span>
             </li>
-            <li className="flex items-start gap-3 p-3 bg-vista-blue-50 dark:bg-vista-blue-900/20 rounded-lg">
-              <FaCode className="icon-primary mt-1 flex-shrink-0" />
-              <span>Smart Skip Prompt with configurable pre-lock confirmation</span>
-            </li>
+
             <li className="flex items-start gap-3 p-3 bg-vista-blue-50 dark:bg-vista-blue-900/20 rounded-lg">
               <FaWindows className="icon-primary mt-1 flex-shrink-0" />
               <span>Autostart with Windows in the background (system tray)</span>
@@ -74,6 +70,38 @@ export const About: React.FC = () => {
               <span>Sleep/Resume Aware with wall-clock time adjustments</span>
             </li>
           </ul>
+        </div>
+
+        {/* Hidden Features / Keyboard Shortcuts */}
+        <div className="divider pt-6">
+          <h2 className="text-2xl font-bold text-primary mb-4 flex items-center gap-2">
+            <FaCode className="icon-primary" />
+            Hidden Features
+          </h2>
+          <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/30 p-5 rounded-xl border-2 border-amber-200 dark:border-amber-700 transition-colors duration-200">
+            <h3 className="text-lg font-semibold text-primary mb-3">Global Keyboard Shortcut</h3>
+            <div className="flex items-center gap-3 text-secondary">
+              <kbd className="px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md font-mono text-sm shadow-sm">
+                Ctrl
+              </kbd>
+              <span className="text-lg font-bold">+</span>
+              <kbd className="px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md font-mono text-sm shadow-sm">
+                Shift
+              </kbd>
+              <span className="text-lg font-bold">+</span>
+              <kbd className="px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md font-mono text-sm shadow-sm">
+                U
+              </kbd>
+              <span className="text-lg font-bold">+</span>
+              <kbd className="px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md font-mono text-sm shadow-sm">
+                L
+              </kbd>
+            </div>
+            <p className="text-sm text-secondary mt-3 leading-relaxed">
+              Press this key combination at any time to instantly skip the lock screen, even when the lock window is
+              active.
+            </p>
+          </div>
         </div>
 
         {/* Tech Stack */}
@@ -116,7 +144,7 @@ export const About: React.FC = () => {
                 className="flex items-center gap-3 text-accent hover:text-vista-blue-800 dark:hover:text-vista-blue-300 transition font-medium cursor-pointer"
               >
                 <FaGlobe className="text-xl" />
-                <span>Portfolio: ntamadakis.gr</span>
+                <span>ntamadakis.gr</span>
               </button>
               <button
                 onClick={() => handleOpenExternal('https://ntamadakis.gr/support-me')}

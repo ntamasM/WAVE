@@ -41,7 +41,7 @@ export function getMediaPath(isDirname: string): string {
  * Get the path to a specific app asset file (logo, icon, etc.).
  *
  * @param isDirname - The __dirname value from the calling module
- * @param relativePath - The relative path from the app-media directory (e.g., 'FocusLock.png' or 'FocusLock.svg')
+ * @param relativePath - The relative path from the app-media directory (e.g., 'Wave.png' or 'Wave.svg')
  * @returns The absolute path to the asset file
  */
 export function getAppAssetPath(isDirname: string, relativePath: string): string {

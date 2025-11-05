@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { CycleStatus } from '../../shared/types';
-import { FaPause, FaPlay, FaLock, FaRedo, FaClock, FaStepForward } from 'react-icons/fa';
+import { FaPause, FaPlay, FaLock, FaRedo, FaClock } from 'react-icons/fa';
 import { showSuccess, showError, showInfo } from '../lib/toast';
 
 export const Controls: React.FC = () => {
@@ -8,9 +8,9 @@ export const Controls: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    window.focusLockAPI.getCycleStatus().then(setStatus);
+    window.waveAPI.getCycleStatus().then(setStatus);
 
-    window.focusLockAPI.onCycleUpdate((update) => {
+    window.waveAPI.onCycleUpdate((update) => {
       setStatus((prev) =>
         prev
           ? {
@@ -26,10 +26,10 @@ export const Controls: React.FC = () => {
     setIsLoading(true);
     try {
       if (status?.phase === 'paused') {
-        await window.focusLockAPI.resumeCycle();
+        await window.waveAPI.resumeCycle();
         showSuccess('Cycle resumed');
       } else {
-        await window.focusLockAPI.pauseCycle();
+        await window.waveAPI.pauseCycle();
         showInfo('Cycle paused');
       }
     } catch (err) {
@@ -43,7 +43,7 @@ export const Controls: React.FC = () => {
   const handleLockNow = async () => {
     setIsLoading(true);
     try {
-      await window.focusLockAPI.lockNow();
+      await window.waveAPI.lockNow();
       showInfo('Locking screen now...');
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
@@ -56,7 +56,7 @@ export const Controls: React.FC = () => {
   const handleReset = async () => {
     setIsLoading(true);
     try {
-      await window.focusLockAPI.resetCycle();
+      await window.waveAPI.resetCycle();
       showSuccess('Cycle reset successfully');
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
@@ -66,43 +66,12 @@ export const Controls: React.FC = () => {
     }
   };
 
-  const handleSkipBreak = async () => {
-    setIsLoading(true);
-    try {
-      await window.focusLockAPI.skipBreak();
-      showSuccess('Break skipped');
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
-      showError(`Failed to skip break: ${errorMsg}`);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const isPrelockPrompt = status?.phase === 'prelockPrompt';
-
   return (
     <div className="section-card p-6">
       <h2 className="section-subtitle mb-6">
         <FaClock className="icon-primary" />
         Controls
       </h2>
-
-      {isPrelockPrompt && (
-        <div className="mb-4 p-4 bg-vista-blue-50 dark:bg-vista-blue-900/30 border-2 border-vista-blue-400 dark:border-vista-blue-600 rounded-xl">
-          <p className="text-sm font-semibold text-vista-blue-900 dark:text-vista-blue-200 mb-3 text-center">
-            🔔 Break starting soon! You can skip this break once per cycle.
-          </p>
-          <button
-            onClick={handleSkipBreak}
-            disabled={isLoading}
-            className="w-full px-4 py-3 bg-vista-blue-600 hover:bg-vista-blue-700 dark:bg-vista-blue-700 dark:hover:bg-vista-blue-600 text-white rounded-xl font-bold transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-base"
-          >
-            <FaStepForward />
-            {isLoading ? 'Skipping...' : 'Skip This Break'}
-          </button>
-        </div>
-      )}
 
       <div className="grid grid-cols-3 gap-3">
         <button

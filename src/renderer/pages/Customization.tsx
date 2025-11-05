@@ -23,7 +23,7 @@ const LogoThumbnail: React.FC<{ logo: string; onSelect: (logo: string) => void }
   const [resolvedUrl, setResolvedUrl] = useState<string>('');
 
   useEffect(() => {
-    window.focusLockAPI.resolveLogoPath(logo).then(setResolvedUrl);
+    window.waveAPI.resolveLogoPath(logo).then(setResolvedUrl);
   }, [logo]);
 
   return (
@@ -63,7 +63,7 @@ export const Customization: React.FC = () => {
   useEffect(() => {
     // Resolve logo path for preview
     if (localCustomization.logoUrl) {
-      window.focusLockAPI.resolveLogoPath(localCustomization.logoUrl).then(setResolvedLogoUrl);
+      window.waveAPI.resolveLogoPath(localCustomization.logoUrl).then(setResolvedLogoUrl);
     }
   }, [localCustomization.logoUrl]);
 
@@ -76,7 +76,7 @@ export const Customization: React.FC = () => {
 
   const loadAvailableLogos = async () => {
     try {
-      const logos = await window.focusLockAPI.getAvailableLogos();
+      const logos = await window.waveAPI.getAvailableLogos();
       setAvailableLogos(logos);
     } catch (error) {
       console.error('Failed to load available logos:', error);
@@ -92,7 +92,7 @@ export const Customization: React.FC = () => {
 
   const handleUploadLogo = async () => {
     try {
-      const result = await window.focusLockAPI.uploadLogo();
+      const result = await window.waveAPI.uploadLogo();
       if (result.success && result.filename) {
         handleDirectChange('logoUrl', result.filename);
         setIsLogoModalOpen(false);
@@ -327,7 +327,7 @@ export const Customization: React.FC = () => {
                   value={localCustomization.logoUrl}
                   onChange={(e) => handleDirectChange('logoUrl', e.target.value)}
                   className="flex-1 px-3 py-2 form-input"
-                  placeholder="./FocusLock.png"
+                  placeholder="./Wave.png"
                   readOnly
                 />
                 <button

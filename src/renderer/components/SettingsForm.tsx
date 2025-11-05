@@ -211,24 +211,22 @@ export const SettingsForm: React.FC = () => {
             <p className="section-description">Customize how breaks work</p>
           </div>
           <div className="section-body space-y-4">
-            {/* Can Skip */}
+            {/* Show Skip Button */}
             <div className="relative flex items-start">
               <div className="flex h-6 items-center">
                 <input
                   type="checkbox"
-                  id="canSkip"
-                  checked={localSettings.canSkip}
-                  onChange={(e) => handleChange('canSkip', e.target.checked)}
+                  id="showSkipButton"
+                  checked={localSettings.showSkipButton}
+                  onChange={(e) => handleChange('showSkipButton', e.target.checked)}
                   className="form-checkbox"
                 />
               </div>
               <div className="ml-3 text-sm leading-6">
-                <label htmlFor="canSkip" className="form-label cursor-pointer">
-                  Show pre-break prompt
+                <label htmlFor="showSkipButton" className="form-label cursor-pointer">
+                  Show skip button
                 </label>
-                <p className="text-secondary">
-                  Display a 30-second countdown before breaks, allowing you to skip once per cycle
-                </p>
+                <p className="text-secondary">Display a skip button during breaks to allow ending the break early</p>
               </div>
             </div>
           </div>
@@ -259,7 +257,7 @@ export const SettingsForm: React.FC = () => {
                 <label htmlFor="startWithWindows" className="form-label cursor-pointer">
                   Launch on Windows startup
                 </label>
-                <p className="text-secondary">Automatically start FocusLock when Windows boots up</p>
+                <p className="text-secondary">Automatically start WAVE when Windows boots up</p>
               </div>
             </div>
 
@@ -288,7 +286,7 @@ export const SettingsForm: React.FC = () => {
                 type="button"
                 onClick={async () => {
                   try {
-                    await window.focusLockAPI.openLogsFolder();
+                    await window.waveAPI.openLogsFolder();
                     showSuccess('Logs folder opened');
                   } catch (err) {
                     const errorMsg = err instanceof Error ? err.message : 'Unknown error';

@@ -42,7 +42,7 @@ class Logger {
     }
     try {
       const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
-      const logFile = path$6.join(this.logDir, `focuslock-${today}.log`);
+      const logFile = path$6.join(this.logDir, `wave-${today}.log`);
       fs$3.appendFileSync(logFile, logMessage + "\n");
       this.cleanOldLogs();
     } catch (err) {
@@ -9559,7 +9559,7 @@ const DEFAULT_CUSTOMIZATION = {
     text: "Time to rest your eyes and stretch",
     color: "#FFFFFF"
   },
-  logoUrl: "./FocusLock.png",
+  logoUrl: "./Wave.png",
   skipButton: {
     text: "Skip Break",
     textColor: "#FFFFFF",
@@ -9572,12 +9572,12 @@ const DEFAULT_SETTINGS = {
   workHours: 2,
   lockMinutes: 5,
   canSkip: true,
-  startWithWindows: true,
-  enableLogging: true,
+  showSkipButton: true,
+  startWithWindows: false,
+  enableLogging: false,
   theme: "light",
   customization: DEFAULT_CUSTOMIZATION
 };
-const PRELOCK_PROMPT_DURATION_MS = 3e4;
 class SettingsStore {
   store;
   constructor() {
@@ -9599,6 +9599,10 @@ class SettingsStore {
           type: "boolean",
           default: DEFAULT_SETTINGS.canSkip
         },
+        showSkipButton: {
+          type: "boolean",
+          default: DEFAULT_SETTINGS.showSkipButton
+        },
         startWithWindows: {
           type: "boolean",
           default: DEFAULT_SETTINGS.startWithWindows
@@ -9618,7 +9622,7 @@ class SettingsStore {
         }
       },
       defaults: DEFAULT_SETTINGS,
-      name: "focuslock-settings"
+      name: "wave-settings"
     });
   }
   getSettings() {
@@ -9626,6 +9630,7 @@ class SettingsStore {
       workHours: this.store.get("workHours"),
       lockMinutes: this.store.get("lockMinutes"),
       canSkip: this.store.get("canSkip"),
+      showSkipButton: this.store.get("showSkipButton", DEFAULT_SETTINGS.showSkipButton),
       startWithWindows: this.store.get("startWithWindows"),
       enableLogging: this.store.get("enableLogging"),
       theme: this.store.get("theme") || "light",
@@ -9669,11 +9674,11 @@ const logger$4 = new Logger("lock-window");
 class LockWindow {
   windows = [];
   displayBounds = /* @__PURE__ */ new Map();
-  create(lockDurationMs, canSkip) {
-    logger$4.info(`Creating lock windows with duration: ${lockDurationMs}ms, canSkip: ${canSkip}`);
+  create(lockDurationMs, showSkipButton) {
+    logger$4.info(`Creating lock windows with duration: ${lockDurationMs}ms, showSkipButton: ${showSkipButton}`);
     const displays = require$$1.screen.getAllDisplays();
     logger$4.info(`Found ${displays.length} display(s)`);
-    const iconPath = getAppAssetPath(__dirname, "FocusLock.png");
+    const iconPath = getAppAssetPath(__dirname, "Wave.png");
     displays.forEach((display, index) => {
       const { x, y, width, height } = display.bounds;
       const isPrimary = display.id === require$$1.screen.getPrimaryDisplay().id;
@@ -9710,7 +9715,7 @@ class LockWindow {
           sandbox: true
         },
         icon: iconPath,
-        title: "FocusLock - Break Time"
+        title: "WAVE - Break Time"
       });
       window2.on("close", (event) => {
         event.preventDefault();
@@ -9725,7 +9730,7 @@ class LockWindow {
       window2.webContents.on("did-finish-load", () => {
         window2.webContents.send("lock:init", {
           lockDurationMs,
-          canSkip,
+          showSkipButton,
           startTime: Date.now()
         });
         logger$4.info(`Positioning window ${index} at x=${x}, y=${y}, width=${width}, height=${height}`);
@@ -9825,7 +9830,6 @@ class CycleManager {
       phase: "work",
       workStartedAt: null,
       breakStartedAt: null,
-      prelockStartedAt: null,
       pausedAt: null,
       pausedRemaining: 0
     };
@@ -9871,7 +9875,6 @@ class CycleManager {
     this.state.phase = "work";
     this.state.workStartedAt = now - (this.settings.workHours * 3600 * 1e3 - previousRemaining);
     this.state.breakStartedAt = null;
-    this.state.prelockStartedAt = null;
     this.state.pausedAt = null;
     this.emit("cycle:phase-changed", "work");
     logger$3.info("Cycle resumed");
@@ -9884,19 +9887,8 @@ class CycleManager {
   updateSettings(newSettings) {
     this.settings = newSettings;
     logger$3.info(
-      `Settings updated: work=${newSettings.workHours}h, lock=${newSettings.lockMinutes}m, canSkip=${newSettings.canSkip}`
+      `Settings updated: work=${newSettings.workHours}h, lock=${newSettings.lockMinutes}m, showSkipButton=${newSettings.showSkipButton}`
     );
-  }
-  skipBreak() {
-    if (this.state.phase === "prelockPrompt") {
-      logger$3.info("Break skipped, resetting work cycle");
-      this.state.phase = "work";
-      this.state.workStartedAt = Date.now();
-      this.state.prelockStartedAt = null;
-      this.emit("cycle:phase-changed", "work");
-    } else {
-      logger$3.warn("skipBreak called but not in prelockPrompt phase");
-    }
   }
   onSystemSuspend() {
     logger$3.info("System suspended, cycle paused");
@@ -9924,29 +9916,13 @@ class CycleManager {
     }
     if (this.state.phase === "work") {
       this.handleWorkPhase(status.remainingMs);
-    } else if (this.state.phase === "prelockPrompt") {
-      this.handlePrelockPhase(status.remainingMs);
     } else if (this.state.phase === "break") {
       this.handleBreakPhase(status.remainingMs);
     }
   }
   handleWorkPhase(remainingMs) {
     if (remainingMs <= 0) {
-      if (this.settings.canSkip) {
-        logger$3.info("Work time elapsed, showing pre-lock prompt");
-        this.state.phase = "prelockPrompt";
-        this.state.prelockStartedAt = Date.now();
-        this.showPrelockPrompt();
-      } else {
-        logger$3.info("Work time elapsed, locking immediately");
-        this.state.phase = "locking";
-        this.executeLock();
-      }
-    }
-  }
-  handlePrelockPhase(remainingMs) {
-    if (remainingMs <= 0) {
-      logger$3.info("Pre-lock prompt timeout, locking");
+      logger$3.info("Work time elapsed, locking immediately");
       this.state.phase = "locking";
       this.executeLock();
     }
@@ -9961,7 +9937,6 @@ class CycleManager {
       this.state.phase = "work";
       this.state.workStartedAt = Date.now();
       this.state.breakStartedAt = null;
-      this.state.prelockStartedAt = null;
       this.emit("cycle:phase-changed", "work");
     }
   }
@@ -9969,19 +9944,15 @@ class CycleManager {
     try {
       logger$3.info("Showing lock window...");
       const lockDurationMs = this.settings.lockMinutes * 60 * 1e3;
-      this.lockWindow.create(lockDurationMs, this.settings.canSkip);
+      this.lockWindow.create(lockDurationMs, this.settings.showSkipButton);
       this.state.phase = "break";
       this.state.breakStartedAt = Date.now();
       this.state.workStartedAt = null;
-      this.state.prelockStartedAt = null;
       this.emit("cycle:phase-changed", "break");
       logger$3.info(`Break phase started (${this.settings.lockMinutes}m)`);
     } catch (err) {
       logger$3.error("Failed to show lock window", err);
     }
-  }
-  showPrelockPrompt() {
-    this.emit("cycle:phase-changed", "prelockPrompt");
   }
   getStatus() {
     const now = Date.now();
@@ -9992,10 +9963,6 @@ class CycleManager {
       const elapsedMs = now - this.state.workStartedAt;
       remainingMs = Math.max(0, workDurationMs - elapsedMs);
       totalMs = workDurationMs;
-    } else if (this.state.phase === "prelockPrompt" && this.state.prelockStartedAt) {
-      const elapsedMs = now - this.state.prelockStartedAt;
-      remainingMs = Math.max(0, PRELOCK_PROMPT_DURATION_MS - elapsedMs);
-      totalMs = PRELOCK_PROMPT_DURATION_MS;
     } else if (this.state.phase === "break" && this.state.breakStartedAt) {
       const breakDurationMs = this.settings.lockMinutes * 60 * 1e3;
       const elapsedMs = now - this.state.breakStartedAt;
@@ -10011,17 +9978,6 @@ class CycleManager {
       remainingMs,
       totalMs
     };
-  }
-  skipPrelock() {
-    if (this.state.phase !== "prelockPrompt") {
-      logger$3.warn("Not in pre-lock phase");
-      return;
-    }
-    logger$3.info("Pre-lock prompt skipped, restarting work cycle");
-    this.state.phase = "work";
-    this.state.workStartedAt = Date.now();
-    this.state.prelockStartedAt = null;
-    this.emit("cycle:phase-changed", "work");
   }
   skipLock() {
     if (this.state.phase !== "break") {
@@ -10048,7 +10004,6 @@ class CycleManager {
       phase: "work",
       workStartedAt: Date.now(),
       breakStartedAt: null,
-      prelockStartedAt: null,
       pausedAt: null,
       pausedRemaining: 0
     };
@@ -10070,6 +10025,9 @@ function validateSettingsInput(settings) {
   }
   if (settings.canSkip !== void 0 && typeof settings.canSkip !== "boolean") {
     errors2.push("canSkip must be a boolean");
+  }
+  if (settings.showSkipButton !== void 0 && typeof settings.showSkipButton !== "boolean") {
+    errors2.push("showSkipButton must be a boolean");
   }
   if (settings.startWithWindows !== void 0 && typeof settings.startWithWindows !== "boolean") {
     errors2.push("startWithWindows must be a boolean");
@@ -10197,10 +10155,6 @@ function handleIPC(settingsStore2, cycleManager2) {
       throw error2;
     }
   });
-  require$$1.ipcMain.handle("cycle:skipBreak", () => {
-    cycleManager2.skipBreak();
-    logger$1.info("Break skipped via IPC");
-  });
   require$$1.ipcMain.handle("logo:getAvailable", async () => {
     try {
       const mediaDir = path$6.join(require$$1.app.getPath("userData"), "media");
@@ -10271,7 +10225,7 @@ const settingsStore = new SettingsStore();
 let cycleManager = null;
 let isQuitting = false;
 const createWindow = () => {
-  const iconPath = getAppAssetPath(__dirname, "FocusLock.png");
+  const iconPath = getAppAssetPath(__dirname, "Wave.png");
   mainWindow = new require$$1.BrowserWindow({
     width: 1500,
     height: 700,
@@ -10286,7 +10240,7 @@ const createWindow = () => {
       // Keep web security enabled
     },
     icon: iconPath,
-    title: "FocusLock",
+    title: "WAVE",
     frame: false,
     // Remove default window frame for custom title bar
     titleBarStyle: "hidden",
@@ -10319,13 +10273,37 @@ const createWindow = () => {
     callback({ responseHeaders: headers });
   });
 };
-const createTray = () => {
-  const iconPath = getAppAssetPath(__dirname, "FocusLock.png");
-  const icon = require$$1.nativeImage.createFromPath(iconPath);
-  const trayIcon = icon.resize({ width: 16, height: 16 });
-  tray = new require$$1.Tray(trayIcon);
-  tray.setToolTip("FocusLock");
+const formatTime = (ms) => {
+  const totalSeconds = Math.ceil(ms / 1e3);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor(totalSeconds % 3600 / 60);
+  const seconds = totalSeconds % 60;
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  } else if (minutes > 0) {
+    return `${minutes}m ${seconds}s`;
+  } else {
+    return `${seconds}s`;
+  }
+};
+const updateTrayMenu = () => {
+  if (!tray || !cycleManager) return;
+  const status = cycleManager.getStatus();
+  let timeLabel = "Time until lock: N/A";
+  if (status.phase === "work" && status.remainingMs > 0) {
+    timeLabel = `Time until lock: ${formatTime(status.remainingMs)}`;
+  } else if (status.phase === "break") {
+    timeLabel = `Break time: ${formatTime(status.remainingMs)}`;
+  } else if (status.phase === "paused") {
+    timeLabel = "Cycle Paused";
+  }
   const contextMenu = require$$1.Menu.buildFromTemplate([
+    {
+      label: timeLabel,
+      enabled: false
+      // Make it non-clickable (display only)
+    },
+    { type: "separator" },
     {
       label: "Dashboard",
       click: () => {
@@ -10342,12 +10320,14 @@ const createTray = () => {
       label: "Pause Cycle",
       click: () => {
         cycleManager?.pause();
+        updateTrayMenu();
       }
     },
     {
       label: "Resume Cycle",
       click: () => {
         cycleManager?.resume();
+        updateTrayMenu();
       }
     },
     {
@@ -10366,6 +10346,14 @@ const createTray = () => {
     }
   ]);
   tray.setContextMenu(contextMenu);
+};
+const createTray = () => {
+  const iconPath = getAppAssetPath(__dirname, "Wave.png");
+  const icon = require$$1.nativeImage.createFromPath(iconPath);
+  const trayIcon = icon.resize({ width: 16, height: 16 });
+  tray = new require$$1.Tray(trayIcon);
+  tray.setToolTip("WAVE");
+  updateTrayMenu();
   tray.on("double-click", () => {
     if (mainWindow) {
       mainWindow.show();
@@ -10374,6 +10362,9 @@ const createTray = () => {
       createWindow();
     }
   });
+  setInterval(() => {
+    updateTrayMenu();
+  }, 1e3);
 };
 const createSingleInstance = () => {
   if (!require$$1.app.requestSingleInstanceLock()) {
@@ -10405,7 +10396,7 @@ const initializeMediaDirectory = async () => {
       await fs$4.mkdir(mediaDir, { recursive: true });
       logger.info("Created media directory");
     }
-    const defaultMedia = ["FocusLock.png"];
+    const defaultMedia = ["Wave.png"];
     for (const fileName of defaultMedia) {
       const destPath = path$6.join(mediaDir, fileName);
       if (!fs$3.existsSync(destPath)) {
@@ -10487,6 +10478,17 @@ require$$1.app.on("ready", async () => {
   await initializeMediaDirectory();
   initializeCycleManager();
   handleIPC(settingsStore, cycleManager);
+  const shortcutRegistered = require$$1.globalShortcut.register("CommandOrControl+Shift+U+L", () => {
+    logger.info("Global shortcut triggered: Ctrl+Shift+U+L - Skipping lock");
+    if (cycleManager) {
+      cycleManager.skipLock();
+    }
+  });
+  if (shortcutRegistered) {
+    logger.info("Global shortcut registered: Ctrl+Shift+U+L");
+  } else {
+    logger.error("Failed to register global shortcut: Ctrl+Shift+U+L");
+  }
   const settings = settingsStore.getSettings();
   const currentAutoStart = getAutoStart();
   if (settings.startWithWindows && !currentAutoStart) {
@@ -10515,6 +10517,7 @@ require$$1.app.on("before-quit", () => {
   if (tray) {
     tray.destroy();
   }
+  require$$1.globalShortcut.unregisterAll();
 });
 require$$1.powerMonitor.on("suspend", () => {
   logger.info("System suspended");

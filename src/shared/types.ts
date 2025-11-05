@@ -26,6 +26,7 @@ export interface Settings {
   workHours: number;
   lockMinutes: number;
   canSkip: boolean;
+  showSkipButton: boolean;
   startWithWindows: boolean;
   enableLogging: boolean;
   theme?: 'light' | 'dark';
@@ -33,14 +34,14 @@ export interface Settings {
 }
 
 export interface CycleStatus {
-  phase: 'work' | 'break' | 'paused' | 'prelockPrompt' | 'locking';
+  phase: 'work' | 'break' | 'paused' | 'locking';
   endsAt: number | null;
   remainingMs: number;
   totalMs: number;
 }
 
 export interface CycleUpdate {
-  phase: 'work' | 'break' | 'paused' | 'prelockPrompt' | 'locking';
+  phase: 'work' | 'break' | 'paused' | 'locking';
   remainingMs: number;
   totalMs: number;
 }
@@ -59,7 +60,7 @@ export const DEFAULT_CUSTOMIZATION: CustomizationSettings = {
     text: 'Time to rest your eyes and stretch',
     color: '#FFFFFF',
   },
-  logoUrl: './FocusLock.png',
+  logoUrl: './Wave.png',
   skipButton: {
     text: 'Skip Break',
     textColor: '#FFFFFF',
@@ -73,10 +74,9 @@ export const DEFAULT_SETTINGS: Settings = {
   workHours: 2.0,
   lockMinutes: 5,
   canSkip: true,
-  startWithWindows: true,
-  enableLogging: true,
+  showSkipButton: true,
+  startWithWindows: false,
+  enableLogging: false,
   theme: 'light',
   customization: DEFAULT_CUSTOMIZATION,
 };
-
-export const PRELOCK_PROMPT_DURATION_MS = 30000; // 30 seconds

@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { formatCompactTime } from '../lib/format';
 import type { CycleStatus } from '../../shared/types';
-import { FaClock, FaPlay, FaPause, FaCoffee, FaExclamationTriangle } from 'react-icons/fa';
+import { FaClock, FaPlay, FaPause, FaCoffee } from 'react-icons/fa';
 
 export const StatusCard: React.FC = () => {
   const [status, setStatus] = useState<CycleStatus | null>(null);
 
   useEffect(() => {
     // Load initial status
-    window.focusLockAPI.getCycleStatus().then(setStatus);
+    window.waveAPI.getCycleStatus().then(setStatus);
 
     // Listen for updates
-    window.focusLockAPI.onCycleUpdate((update) => {
+    window.waveAPI.onCycleUpdate((update) => {
       setStatus((prev) =>
         prev
           ? {
@@ -32,21 +32,18 @@ export const StatusCard: React.FC = () => {
     work: 'Working',
     break: 'On Break',
     paused: 'Paused',
-    prelockPrompt: 'Break Due Soon',
   };
 
   const phaseDesc: Record<string, string> = {
     work: 'Focus time remaining before break',
     break: 'Break time remaining',
     paused: 'Cycle paused',
-    prelockPrompt: 'Confirm break or continue working',
   };
 
   const phaseIcons: Record<string, React.ReactNode> = {
     work: <FaPlay className="inline-block" />,
     break: <FaCoffee className="inline-block" />,
     paused: <FaPause className="inline-block" />,
-    prelockPrompt: <FaExclamationTriangle className="inline-block" />,
   };
 
   const getPhaseStyles = (phase: string) => {
@@ -62,12 +59,6 @@ export const StatusCard: React.FC = () => {
         iconColor: 'text-bright-gray-600 dark:text-bright-gray-400',
         textColor: 'text-bright-gray-800 dark:text-bright-gray-200',
         barColor: 'bg-bright-gray-600 dark:bg-bright-gray-500',
-      },
-      prelockPrompt: {
-        bg: 'bg-vista-blue-100 dark:bg-vista-blue-900/30 border-vista-blue-300 dark:border-vista-blue-600',
-        iconColor: 'text-vista-blue-600 dark:text-vista-blue-400',
-        textColor: 'text-vista-blue-800 dark:text-vista-blue-200',
-        barColor: 'bg-vista-blue-400 dark:bg-vista-blue-500',
       },
       paused: {
         bg: 'bg-bright-gray-100 dark:bg-bright-gray-800 border-bright-gray-200 dark:border-bright-gray-600',

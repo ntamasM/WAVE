@@ -27,7 +27,7 @@ win:
     - target: portable
       arch:
         - x64
-  icon: assets/app-media/FocusLock.png
+  icon: assets/app-media/Wave.png
   certificateFile: null
   sign: null
   signingHashAlgorithms: []

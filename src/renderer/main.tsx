@@ -8,26 +8,26 @@ import { DEFAULT_CUSTOMIZATION } from '../shared/types';
 // Lock Screen Component
 interface LockData {
   lockDurationMs: number;
-  canSkip: boolean;
+  showSkipButton: boolean;
   startTime: number;
 }
 
 const LockScreen: React.FC = () => {
   const [remainingMs, setRemainingMs] = useState<number>(0);
   const [totalMs, setTotalMs] = useState<number>(0);
-  const [canSkip, setCanSkip] = useState<boolean>(false);
+  const [showSkipButton, setShowSkipButton] = useState<boolean>(false);
   const [skipping, setSkipping] = useState<boolean>(false);
   const [customization, setCustomization] = useState<CustomizationSettings>(DEFAULT_CUSTOMIZATION);
   const [resolvedLogoUrl, setResolvedLogoUrl] = useState<string>(DEFAULT_CUSTOMIZATION.logoUrl);
 
   useEffect(() => {
     // Load customization settings
-    window.focusLockAPI.getSettings().then(async (settings) => {
+    window.waveAPI.getSettings().then(async (settings) => {
       if (settings.customization) {
         setCustomization(settings.customization);
         // Resolve logo path
         if (settings.customization.logoUrl) {
-          const resolved = await window.focusLockAPI.resolveLogoPath(settings.customization.logoUrl);
+          const resolved = await window.waveAPI.resolveLogoPath(settings.customization.logoUrl);
           setResolvedLogoUrl(resolved);
         }
       }
@@ -37,7 +37,7 @@ const LockScreen: React.FC = () => {
     const handleInit = (data: LockData) => {
       setTotalMs(data.lockDurationMs);
       setRemainingMs(data.lockDurationMs);
-      setCanSkip(data.canSkip);
+      setShowSkipButton(data.showSkipButton);
     };
 
     // Listen for timer updates
@@ -45,19 +45,19 @@ const LockScreen: React.FC = () => {
       setRemainingMs(data.remainingMs);
     };
 
-    window.focusLockAPI.onLockInit(handleInit);
-    window.focusLockAPI.onLockUpdate(handleUpdate);
+    window.waveAPI.onLockInit(handleInit);
+    window.waveAPI.onLockUpdate(handleUpdate);
 
     return () => {
-      window.focusLockAPI.removeAllListeners('lock:init');
-      window.focusLockAPI.removeAllListeners('lock:update');
+      window.waveAPI.removeAllListeners('lock:init');
+      window.waveAPI.removeAllListeners('lock:update');
     };
   }, []);
 
   const handleSkip = () => {
     if (skipping) return; // Prevent multiple clicks
     setSkipping(true);
-    window.focusLockAPI.skipLock();
+    window.waveAPI.skipLock();
   };
 
   const formatTime = (ms: number): string => {
@@ -79,9 +79,7 @@ const LockScreen: React.FC = () => {
       <div className="text-center max-w-2xl mx-auto">
         {/* Icon */}
         <div className="mb-8">
-          <div className="w-40 h-40 mx-auto flex items-center justify-center bg-white/10 backdrop-blur-lg rounded-3xl p-6 shadow-2xl">
-            <img src={resolvedLogoUrl} alt="FocusLock" className="w-full h-full object-contain" />
-          </div>
+          <img src={resolvedLogoUrl} alt="WAVE" className="w-40 h-40 mx-auto object-contain rounded-3xl shadow-2xl" />
         </div>
 
         {/* Title */}
@@ -114,7 +112,7 @@ const LockScreen: React.FC = () => {
         </div>
 
         {/* Skip Button */}
-        {canSkip && (
+        {showSkipButton && (
           <button
             onClick={handleSkip}
             disabled={skipping}
@@ -139,7 +137,7 @@ const BlankScreen: React.FC = () => {
   useEffect(() => {
     console.log('[BlankScreen] Component mounted, loading settings...');
     // Load customization settings
-    window.focusLockAPI.getSettings().then((settings) => {
+    window.waveAPI.getSettings().then((settings) => {
       console.log('[BlankScreen] Settings loaded:', settings);
       if (settings.customization) {
         setCustomization(settings.customization);
@@ -169,16 +167,16 @@ const Router: React.FC = () => {
   const display = urlParams.get('display');
   const isPrimary = urlParams.get('isPrimary') === 'true';
 
-  console.log('[FocusLock Router]', { mode, display, isPrimary, url: window.location.href });
+  console.log('[WAVE Router]', { mode, display, isPrimary, url: window.location.href });
 
   if (mode === 'lock') {
     // Show timer content only on primary display
     if (isPrimary) {
-      console.log('[FocusLock] Rendering LockScreen (Primary Display)');
+      console.log('[WAVE] Rendering LockScreen (Primary Display)');
       return <LockScreen />;
     }
     // Show gradient on all secondary displays
-    console.log('[FocusLock] Rendering BlankScreen (Secondary Display)');
+    console.log('[WAVE] Rendering BlankScreen (Secondary Display)');
     return <BlankScreen />;
   }
 

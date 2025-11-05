@@ -1,24 +1,23 @@
 import { BrowserWindow } from 'electron';
-import { Settings, CycleStatus, PRELOCK_PROMPT_DURATION_MS } from '../shared/types';
+import { Settings, CycleStatus } from '../shared/types';
 import { LockWindow } from './lock-window';
 import { Logger } from './logger';
 
 const logger = new Logger('cycle-manager');
 
-type CyclePhase = 'work' | 'break' | 'paused' | 'prelockPrompt' | 'locking';
+type CyclePhase = 'work' | 'break' | 'paused' | 'locking';
 
 interface CycleState {
   phase: CyclePhase;
   workStartedAt: number | null;
   breakStartedAt: number | null;
-  prelockStartedAt: number | null;
   pausedAt: number | null;
   pausedRemaining: number; // remaining ms when paused
 }
 
 /**
  * CycleManager implements the state machine:
- * work → prelockPrompt (if canSkip) → locking → break → work
+ * work → locking → break → work
  *
  * Timekeeping uses wall-clock deltas (Date.now()) to survive sleep/resume.
  */
@@ -38,7 +37,6 @@ export class CycleManager {
       phase: 'work',
       workStartedAt: null,
       breakStartedAt: null,
-      prelockStartedAt: null,
       pausedAt: null,
       pausedRemaining: 0,
     };
@@ -98,7 +96,6 @@ export class CycleManager {
     this.state.phase = 'work';
     this.state.workStartedAt = now - (this.settings.workHours * 3600 * 1000 - previousRemaining);
     this.state.breakStartedAt = null;
-    this.state.prelockStartedAt = null;
     this.state.pausedAt = null;
 
     this.emit('cycle:phase-changed', 'work');
@@ -114,20 +111,8 @@ export class CycleManager {
   updateSettings(newSettings: Settings): void {
     this.settings = newSettings;
     logger.info(
-      `Settings updated: work=${newSettings.workHours}h, lock=${newSettings.lockMinutes}m, canSkip=${newSettings.canSkip}`
+      `Settings updated: work=${newSettings.workHours}h, lock=${newSettings.lockMinutes}m, showSkipButton=${newSettings.showSkipButton}`
     );
-  }
-
-  skipBreak(): void {
-    if (this.state.phase === 'prelockPrompt') {
-      logger.info('Break skipped, resetting work cycle');
-      this.state.phase = 'work';
-      this.state.workStartedAt = Date.now();
-      this.state.prelockStartedAt = null;
-      this.emit('cycle:phase-changed', 'work');
-    } else {
-      logger.warn('skipBreak called but not in prelockPrompt phase');
-    }
   }
 
   onSystemSuspend(): void {
@@ -162,8 +147,6 @@ export class CycleManager {
 
     if (this.state.phase === 'work') {
       this.handleWorkPhase(status.remainingMs);
-    } else if (this.state.phase === 'prelockPrompt') {
-      this.handlePrelockPhase(status.remainingMs);
     } else if (this.state.phase === 'break') {
       this.handleBreakPhase(status.remainingMs);
     }
@@ -171,24 +154,8 @@ export class CycleManager {
 
   private handleWorkPhase(remainingMs: number): void {
     if (remainingMs <= 0) {
-      // Work time elapsed
-      if (this.settings.canSkip) {
-        logger.info('Work time elapsed, showing pre-lock prompt');
-        this.state.phase = 'prelockPrompt';
-        this.state.prelockStartedAt = Date.now();
-        this.showPrelockPrompt();
-      } else {
-        logger.info('Work time elapsed, locking immediately');
-        this.state.phase = 'locking';
-        this.executeLock();
-      }
-    }
-  }
-
-  private handlePrelockPhase(remainingMs: number): void {
-    if (remainingMs <= 0) {
-      // Prelock timeout, proceed to lock
-      logger.info('Pre-lock prompt timeout, locking');
+      // Work time elapsed, lock immediately
+      logger.info('Work time elapsed, locking immediately');
       this.state.phase = 'locking';
       this.executeLock();
     }
@@ -207,7 +174,6 @@ export class CycleManager {
       this.state.phase = 'work';
       this.state.workStartedAt = Date.now();
       this.state.breakStartedAt = null;
-      this.state.prelockStartedAt = null;
       this.emit('cycle:phase-changed', 'work');
     }
   }
@@ -218,24 +184,18 @@ export class CycleManager {
 
       // Create and show lock window
       const lockDurationMs = this.settings.lockMinutes * 60 * 1000;
-      this.lockWindow.create(lockDurationMs, this.settings.canSkip);
+      this.lockWindow.create(lockDurationMs, this.settings.showSkipButton);
 
       // Transition to break phase
       this.state.phase = 'break';
       this.state.breakStartedAt = Date.now();
       this.state.workStartedAt = null;
-      this.state.prelockStartedAt = null;
 
       this.emit('cycle:phase-changed', 'break');
       logger.info(`Break phase started (${this.settings.lockMinutes}m)`);
     } catch (err) {
       logger.error('Failed to show lock window', err as Error);
     }
-  }
-
-  private showPrelockPrompt(): void {
-    // Send event to renderer to show modal
-    this.emit('cycle:phase-changed', 'prelockPrompt');
   }
 
   getStatus(): CycleStatus {
@@ -248,10 +208,6 @@ export class CycleManager {
       const elapsedMs = now - this.state.workStartedAt;
       remainingMs = Math.max(0, workDurationMs - elapsedMs);
       totalMs = workDurationMs;
-    } else if (this.state.phase === 'prelockPrompt' && this.state.prelockStartedAt) {
-      const elapsedMs = now - this.state.prelockStartedAt;
-      remainingMs = Math.max(0, PRELOCK_PROMPT_DURATION_MS - elapsedMs);
-      totalMs = PRELOCK_PROMPT_DURATION_MS;
     } else if (this.state.phase === 'break' && this.state.breakStartedAt) {
       const breakDurationMs = this.settings.lockMinutes * 60 * 1000;
       const elapsedMs = now - this.state.breakStartedAt;
@@ -268,19 +224,6 @@ export class CycleManager {
       remainingMs,
       totalMs,
     };
-  }
-
-  skipPrelock(): void {
-    if (this.state.phase !== 'prelockPrompt') {
-      logger.warn('Not in pre-lock phase');
-      return;
-    }
-
-    logger.info('Pre-lock prompt skipped, restarting work cycle');
-    this.state.phase = 'work';
-    this.state.workStartedAt = Date.now();
-    this.state.prelockStartedAt = null;
-    this.emit('cycle:phase-changed', 'work');
   }
 
   skipLock(): void {
@@ -316,7 +259,6 @@ export class CycleManager {
       phase: 'work',
       workStartedAt: Date.now(),
       breakStartedAt: null,
-      prelockStartedAt: null,
       pausedAt: null,
       pausedRemaining: 0,
     };

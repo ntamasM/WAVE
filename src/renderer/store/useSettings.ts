@@ -25,7 +25,7 @@ export const useSettings = () => {
 
   useEffect(() => {
     // Load settings from main process
-    window.focusLockAPI.getSettings().then((loaded) => {
+    window.waveAPI.getSettings().then((loaded) => {
       currentSettings = loaded;
       setSettingsState(loaded);
       setLoading(false);
@@ -35,12 +35,12 @@ export const useSettings = () => {
 
   const setSettings = useCallback(async (partial: Partial<Settings>) => {
     try {
-      const validation = await window.focusLockAPI.validateSettings(partial);
+      const validation = await window.waveAPI.validateSettings(partial);
       if (!validation.valid) {
         throw new Error(validation.errors.join('; '));
       }
 
-      const updated = await window.focusLockAPI.setSettings(partial);
+      const updated = await window.waveAPI.setSettings(partial);
       currentSettings = updated;
       setSettingsState(updated);
       listeners.forEach((cb) => cb(updated));
@@ -66,12 +66,12 @@ export const useSettings = () => {
 // External setter for use in other modules
 export const updateSettings = async (partial: Partial<Settings>) => {
   try {
-    const validation = await window.focusLockAPI.validateSettings(partial);
+    const validation = await window.waveAPI.validateSettings(partial);
     if (!validation.valid) {
       throw new Error(validation.errors.join('; '));
     }
 
-    const updated = await window.focusLockAPI.setSettings(partial);
+    const updated = await window.waveAPI.setSettings(partial);
     currentSettings = updated;
     listeners.forEach((cb) => cb(updated));
     return updated;

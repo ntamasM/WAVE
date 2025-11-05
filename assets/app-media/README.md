@@ -1,11 +1,11 @@
 # App Media (Private Assets)
 
-This folder contains private application assets used internally by FocusLock.
+This folder contains private application assets used internally by WAVE.
 
 ## Contents
 
-- **FocusLock.png** - Application logo (PNG format)
-- **FocusLock.svg** - Application logo (SVG format)
+- **Wave.png** - Application logo (PNG format)
+- **Wave.svg** - Application logo (SVG format)
 
 These assets are used for:
 

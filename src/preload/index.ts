@@ -41,9 +41,6 @@ const api = {
   // Lock window
   skipLock: () => ipcRenderer.send('lock:skip'),
 
-  // Skip break during prelock prompt
-  skipBreak: () => ipcRenderer.invoke('cycle:skipBreak'),
-
   // Logo management
   getAvailableLogos: () => ipcRenderer.invoke('logo:getAvailable'),
   uploadLogo: () => ipcRenderer.invoke('logo:upload'),
@@ -63,7 +60,7 @@ const api = {
     ipcRenderer.on('window:show', () => callback());
   },
   // Lock window listeners
-  onLockInit: (callback: (data: { lockDurationMs: number; canSkip: boolean; startTime: number }) => void) => {
+  onLockInit: (callback: (data: { lockDurationMs: number; showSkipButton: boolean; startTime: number }) => void) => {
     ipcRenderer.on('lock:init', (_event, data) => callback(data));
   },
   onLockUpdate: (callback: (data: { remainingMs: number }) => void) => {
@@ -75,11 +72,11 @@ const api = {
 };
 
 // Expose to renderer via contextBridge
-contextBridge.exposeInMainWorld('focusLockAPI', api);
+contextBridge.exposeInMainWorld('waveAPI', api);
 
 // TypeScript type support in renderer
 declare global {
   interface Window {
-    focusLockAPI: typeof api;
+    waveAPI: typeof api;
   }
 }

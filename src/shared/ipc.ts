@@ -48,6 +48,10 @@ export function validateSettingsInput(settings: Partial<Settings>): { valid: boo
     errors.push('canSkip must be a boolean');
   }
 
+  if (settings.showSkipButton !== undefined && typeof settings.showSkipButton !== 'boolean') {
+    errors.push('showSkipButton must be a boolean');
+  }
+
   if (settings.startWithWindows !== undefined && typeof settings.startWithWindows !== 'boolean') {
     errors.push('startWithWindows must be a boolean');
   }
