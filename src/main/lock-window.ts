@@ -17,7 +17,7 @@ export class LockWindow {
     const displays = screen.getAllDisplays();
     logger.info(`Found ${displays.length} display(s)`);
 
-    const iconPath = getAppAssetPath(__dirname, 'Wave.png');
+    const iconPath = getAppAssetPath(__dirname, 'Wave--icon.png');
 
     // Create a lock window for each display
     displays.forEach((display, index) => {

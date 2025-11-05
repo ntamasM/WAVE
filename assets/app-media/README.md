@@ -4,8 +4,8 @@ This folder contains private application assets used internally by WAVE.
 
 ## Contents
 
-- **Wave.png** - Application logo (PNG format)
-- **Wave.svg** - Application logo (SVG format)
+- **Wave--icon.png** - Application logo (PNG format)
+- **Wave--icon.svg** - Application logo (SVG format)
 
 These assets are used for:
 

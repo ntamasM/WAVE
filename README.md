@@ -278,15 +278,15 @@ files:
 win:
   target:
     - nsis
-  icon: assets/app-media/Wave.png
+  icon: assets/app-media/Wave--icon.png
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: true
   createStartMenuShortcut: true
   shortcutName: WAVE
-  installerIcon: assets/app-media/Wave.png
-  uninstallerIcon: assets/app-media/Wave.png
+  installerIcon: assets/app-media/Wave--icon.png
+  uninstallerIcon: assets/app-media/Wave--icon.png
 ```
 
 ## 📖 Usage Guide
@@ -502,7 +502,7 @@ const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000; // Change 7 to desired days
 
 ### Custom App Icon
 
-Replace `assets/app-media/Wave.png` and `assets/app-media/Wave.svg` with your custom images.
+Replace `assets/app-media/Wave--icon.png` and `assets/app-media/Wave--icon.svg` with your custom images.
 
 Rebuild with:
 
@@ -606,11 +606,11 @@ WAVE/
 │   ├── README.md                   # Assets documentation
 │   ├── app-media/                  # App assets (logo, icons)
 │   │   ├── README.md              # App media documentation
-│   │   ├── Wave.png               # App logo (PNG)
-│   │   └── Wave.svg               # App logo (SVG)
+│   │   ├── Wave--icon.png         # App logo (PNG)
+│   │   └── Wave--icon.svg         # App logo (SVG)
 │   └── media/                      # User-facing media
 │       ├── README.md              # Media documentation
-│       └── Wave.png               # Default lock screen logo
+│       └── Wave--icon.png         # Default lock screen logo
 │
 └── dist/                           # Build output (generated)
     ├── main/                       # Compiled main process

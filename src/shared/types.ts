@@ -59,7 +59,7 @@ export const DEFAULT_CUSTOMIZATION: CustomizationSettings = {
     text: 'Time to rest your eyes and stretch',
     color: '#FFFFFF',
   },
-  logoUrl: './Wave.png',
+  logoUrl: './Wave--icon.png',
   skipButton: {
     text: 'Skip Break',
     textColor: '#FFFFFF',

@@ -327,7 +327,7 @@ export const Customization: React.FC = () => {
                   value={localCustomization.logoUrl}
                   onChange={(e) => handleDirectChange('logoUrl', e.target.value)}
                   className="flex-1 px-3 py-2 form-input"
-                  placeholder="./Wave.png"
+                  placeholder="./Wave--icon.png"
                   readOnly
                 />
                 <button

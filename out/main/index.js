@@ -9559,7 +9559,7 @@ const DEFAULT_CUSTOMIZATION = {
     text: "Time to rest your eyes and stretch",
     color: "#FFFFFF"
   },
-  logoUrl: "./Wave.png",
+  logoUrl: "./Wave--icon.png",
   skipButton: {
     text: "Skip Break",
     textColor: "#FFFFFF",
@@ -9672,7 +9672,7 @@ class LockWindow {
     logger$4.info(`Creating lock windows with duration: ${lockDurationMs}ms, showSkipButton: ${showSkipButton}`);
     const displays = require$$1.screen.getAllDisplays();
     logger$4.info(`Found ${displays.length} display(s)`);
-    const iconPath = getAppAssetPath(__dirname, "Wave.png");
+    const iconPath = getAppAssetPath(__dirname, "Wave--icon.png");
     displays.forEach((display, index) => {
       const { x, y, width, height } = display.bounds;
       const isPrimary = display.id === require$$1.screen.getPrimaryDisplay().id;
@@ -10216,7 +10216,7 @@ const settingsStore = new SettingsStore();
 let cycleManager = null;
 let isQuitting = false;
 const createWindow = () => {
-  const iconPath = getAppAssetPath(__dirname, "Wave.png");
+  const iconPath = getAppAssetPath(__dirname, "Wave--icon.png");
   mainWindow = new require$$1.BrowserWindow({
     width: 1500,
     height: 700,
@@ -10339,7 +10339,7 @@ const updateTrayMenu = () => {
   tray.setContextMenu(contextMenu);
 };
 const createTray = () => {
-  const iconPath = getAppAssetPath(__dirname, "Wave.png");
+  const iconPath = getAppAssetPath(__dirname, "Wave--icon.png");
   const icon = require$$1.nativeImage.createFromPath(iconPath);
   const trayIcon = icon.resize({ width: 16, height: 16 });
   tray = new require$$1.Tray(trayIcon);
@@ -10387,7 +10387,7 @@ const initializeMediaDirectory = async () => {
       await fs$4.mkdir(mediaDir, { recursive: true });
       logger.info("Created media directory");
     }
-    const defaultMedia = ["Wave.png"];
+    const defaultMedia = ["Wave--icon.png"];
     for (const fileName of defaultMedia) {
       const destPath = path$6.join(mediaDir, fileName);
       if (!fs$3.existsSync(destPath)) {

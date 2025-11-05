@@ -11,7 +11,7 @@ export const TitleBar: React.FC<TitleBarProps> = ({ currentPage, onNavigate }) =
 
   useEffect(() => {
     // Resolve the app logo path
-    window.waveAPI.resolveLogoPath('./Wave.png').then((resolved) => {
+    window.waveAPI.resolveLogoPath('./Wave--icon.png').then((resolved) => {
       setLogoUrl(resolved);
     });
   }, []);

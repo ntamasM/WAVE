@@ -4,6 +4,7 @@
   "description": "WAVE (Work And Vital Energy) - Minimalist Windows productivity utility that enforces breaks by locking the OS",
   "main": "out/main/index.js",
   "homepage": "./",
+  "productionDependencies": true,
   "author": "Manolis Ntamadakis <https://ntamadakis.gr/>",
   "license": "MIT",
   "scripts": {
@@ -12,10 +13,10 @@
     "lint": "eslint src --ext .ts,.tsx",
     "format": "prettier --write .",
     "preview": "electron-vite preview",
-    "build:win": "pnpm run build && electron-builder --win --x64",
-    "build:win:portable": "pnpm run build && electron-builder --win portable --x64",
-    "build:win:installer": "pnpm run build && electron-builder --win nsis --x64",
-    "package:win": "pnpm run build && electron-builder --win",
+    "build:win": "pnpm run build && electron-builder --win --x64 --config electron-builder.yml",
+    "build:win:portable": "pnpm run build && electron-builder --win portable --x64 --config electron-builder.yml",
+    "build:win:installer": "pnpm run build && electron-builder --win nsis --x64 --config electron-builder.yml",
+    "package:win": "pnpm run build && electron-builder --win --config electron-builder.yml",
     "dist:win": "pnpm run package:win"
   },
   "dependencies": {

@@ -18,7 +18,7 @@ let cycleManager: CycleManager | null = null;
 let isQuitting = false;
 
 const createWindow = (): void => {
-  const iconPath = getAppAssetPath(__dirname, 'Wave.png');
+  const iconPath = getAppAssetPath(__dirname, 'Wave--icon.png');
   mainWindow = new BrowserWindow({
     width: 1500,
     height: 700,
@@ -159,7 +159,7 @@ const updateTrayMenu = (): void => {
 };
 
 const createTray = (): void => {
-  const iconPath = getAppAssetPath(__dirname, 'Wave.png');
+  const iconPath = getAppAssetPath(__dirname, 'Wave--icon.png');
   const icon = nativeImage.createFromPath(iconPath);
   // Resize icon for tray (16x16 is standard for Windows tray)
   const trayIcon = icon.resize({ width: 16, height: 16 });
@@ -221,7 +221,7 @@ const initializeMediaDirectory = async (): Promise<void> => {
     }
 
     // Copy default logo and any bundled media if they don't exist
-    const defaultMedia = ['Wave.png'];
+    const defaultMedia = ['Wave--icon.png'];
 
     for (const fileName of defaultMedia) {
       const destPath = join(mediaDir, fileName);
