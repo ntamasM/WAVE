@@ -9571,7 +9571,6 @@ const DEFAULT_CUSTOMIZATION = {
 const DEFAULT_SETTINGS = {
   workHours: 2,
   lockMinutes: 5,
-  canSkip: true,
   showSkipButton: true,
   startWithWindows: false,
   enableLogging: false,
@@ -9594,10 +9593,6 @@ class SettingsStore {
           default: DEFAULT_SETTINGS.lockMinutes,
           minimum: 1,
           maximum: 60
-        },
-        canSkip: {
-          type: "boolean",
-          default: DEFAULT_SETTINGS.canSkip
         },
         showSkipButton: {
           type: "boolean",
@@ -9629,7 +9624,6 @@ class SettingsStore {
     return {
       workHours: this.store.get("workHours"),
       lockMinutes: this.store.get("lockMinutes"),
-      canSkip: this.store.get("canSkip"),
       showSkipButton: this.store.get("showSkipButton", DEFAULT_SETTINGS.showSkipButton),
       startWithWindows: this.store.get("startWithWindows"),
       enableLogging: this.store.get("enableLogging"),
@@ -10022,9 +10016,6 @@ function validateSettingsInput(settings) {
     if (typeof settings.lockMinutes !== "number" || settings.lockMinutes < 1 || settings.lockMinutes > 60) {
       errors2.push("Lock time must be between 1 and 60 minutes");
     }
-  }
-  if (settings.canSkip !== void 0 && typeof settings.canSkip !== "boolean") {
-    errors2.push("canSkip must be a boolean");
   }
   if (settings.showSkipButton !== void 0 && typeof settings.showSkipButton !== "boolean") {
     errors2.push("showSkipButton must be a boolean");
