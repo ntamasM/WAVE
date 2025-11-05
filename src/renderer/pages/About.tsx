@@ -20,23 +20,25 @@ export const About: React.FC = () => {
         {/* App Info */}
         <div className="text-center">
           <div className="bg-vista-blue-50 dark:bg-vista-blue-900/20 rounded-2xl p-6 inline-block mb-4">
-            {logoUrl && <img src={logoUrl} alt="FocusLock" className="w-24 h-24 object-contain mx-auto" />}
+            {logoUrl && <img src={logoUrl} alt="WAVE" className="w-24 h-24 object-contain mx-auto" />}
           </div>
-          <h1 className="text-4xl font-bold text-primary mb-2">FocusLock</h1>
-          <p className="text-secondary text-lg">Enforce focus through automated OS-level breaks</p>
-          <p className="text-sm text-muted mt-2 font-medium">Version 0.0.11-beta</p>
+          <h1 className="text-4xl font-bold text-primary mb-2">WAVE</h1>
+          <p className="text-secondary text-lg">
+            Work And Vital Energy - Enforce focus through automated OS-level breaks
+          </p>
+          <p className="text-sm text-muted mt-2 font-medium">Version 0.0.15</p>
         </div>
 
         {/* Description */}
         <div className="divider pt-6">
           <h2 className="text-2xl font-bold text-primary mb-4 flex items-center gap-2">
             <FaLock className="icon-primary" />
-            About FocusLock
+            About WAVE
           </h2>
           <p className="text-secondary leading-relaxed mb-4">
-            FocusLock is a minimalist Windows productivity utility designed for professionals who struggle with taking
-            regular breaks. Instead of soft overlays that can be dismissed, it uses fullscreen lock windows on all
-            displays to enforce breaks.
+            WAVE (Work And Vital Energy) is a minimalist Windows productivity utility designed for professionals who
+            struggle with taking regular breaks. Instead of soft overlays that can be dismissed, it uses fullscreen lock
+            windows on all displays to enforce breaks.
           </p>
           <p className="text-secondary leading-relaxed">
             After configurable work periods, fullscreen lock windows appear on all monitors for a set break duration,

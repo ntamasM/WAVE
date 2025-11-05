@@ -1,5 +1,5 @@
-appId: 'com.focuslock'
-productName: 'FocusLock'
+appId: 'com.wave'
+productName: 'WAVE'
 directories:
   buildResources: assets
   output: dist
@@ -40,7 +40,7 @@ nsis:
   allowElevation: true
   createDesktopShortcut: true
   createStartMenuShortcut: true
-  shortcutName: FocusLock
+  shortcutName: WAVE
   license: LICENSE
   deleteAppDataOnUninstall: false
   runAfterFinish: true

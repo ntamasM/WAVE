@@ -32,7 +32,7 @@ const createWindow = (): void => {
       webSecurity: true, // Keep web security enabled
     },
     icon: iconPath,
-    title: 'FocusLock',
+    title: 'WAVE',
     frame: false, // Remove default window frame for custom title bar
     titleBarStyle: 'hidden',
     autoHideMenuBar: true, // Hide menu bar (File, Edit, View, etc.)

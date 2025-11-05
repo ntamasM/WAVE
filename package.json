@@ -1,7 +1,7 @@
 {
-  "name": "focuslock",
-  "version": "0.0.11-beta",
-  "description": "Minimalist Windows productivity utility that enforces breaks by locking the OS",
+  "name": "wave",
+  "version": "0.0.15",
+  "description": "WAVE (Work And Vital Energy) - Minimalist Windows productivity utility that enforces breaks by locking the OS",
   "main": "out/main/index.js",
   "homepage": "./",
   "author": "Manolis Ntamadakis <https://ntamadakis.gr/>",

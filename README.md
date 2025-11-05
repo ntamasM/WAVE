@@ -1,10 +1,10 @@
-# FocusLock
+# WAVE (Work And Vital Energy)
 
 A minimalist Windows productivity utility that enforces focus breaks with fullscreen lock windows across all monitors. Runs in the background, auto-starts with Windows, and provides a modern dashboard for configuration.
 
-## 🎯 What is FocusLock?
+## 🎯 What is WAVE?
 
-FocusLock is designed for professionals who struggle with taking regular breaks. Instead of soft overlays that can be dismissed, it uses **fullscreen lock windows** on all displays to enforce breaks. After configurable work periods (e.g., 2 hours), fullscreen lock windows appear on all monitors for a set break duration (e.g., 5 minutes), displaying a timer and optional skip button.
+WAVE (Work And Vital Energy) is designed for professionals who struggle with taking regular breaks. Instead of soft overlays that can be dismissed, it uses **fullscreen lock windows** on all displays to enforce breaks. After configurable work periods (e.g., 2 hours), fullscreen lock windows appear on all monitors for a set break duration (e.g., 5 minutes), displaying a timer and optional skip button.
 
 ### Key Features
 
@@ -153,7 +153,7 @@ All IPC communications are typed and validated.
 1. **Clone or initialize the repository:**
 
    ```powershell
-   cd c:\path\to\FocusLock
+   cd c:\path\to\WAVE
    ```
 
 2. **Install dependencies:**
@@ -208,7 +208,7 @@ pnpm dist:win
 pnpm package:win
 ```
 
-**Output:** `dist/FocusLock Setup 1.0.0.exe`
+**Output:** `dist/WAVE Setup 0.0.15.exe`
 
 ### NSIS Installer Features
 
@@ -221,8 +221,8 @@ pnpm package:win
 ### Configuration: `electron-builder.yml`
 
 ```yaml
-appId: 'com.focuslock'
-productName: 'FocusLock'
+appId: 'com.wave'
+productName: 'WAVE'
 directories:
   buildResources: resources
   output: dist
@@ -242,7 +242,7 @@ nsis:
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: true
   createStartMenuShortcut: true
-  shortcutName: FocusLock
+  shortcutName: WAVE
   installerIcon: assets/app-media/FocusLock.png
   uninstallerIcon: assets/app-media/FocusLock.png
 ```
@@ -311,9 +311,9 @@ nsis:
 
 ### App Doesn't Start with Windows
 
-1. **Check autostart setting**: Dashboard → Settings → "Start FocusLock with Windows" (should be enabled).
+1. **Check autostart setting**: Dashboard → Settings → "Start WAVE with Windows" (should be enabled).
 2. **Verify path**: Check Startup folder: `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup`.
-3. **Antivirus**: Exclude FocusLock from antivirus real-time scanning.
+3. **Antivirus**: Exclude WAVE from antivirus real-time scanning.
 
 ### Lock Windows Don't Appear
 
@@ -324,14 +324,14 @@ nsis:
 ### Logs Not Appearing
 
 1. **Enable logging**: Dashboard → Settings → "Enable diagnostic logging" → Save.
-2. **Find logs**: Open `%APPDATA%\FocusLock\logs\` (or `%LOCALAPPDATA%\FocusLock\logs\`).
-3. **File naming**: Logs are daily: `focuslock-2025-10-30.log`.
+2. **Find logs**: Open `%APPDATA%\wave\logs\` (or `%LOCALAPPDATA%\wave\logs\`).
+3. **File naming**: Logs are daily: `wave-2025-10-30.log`.
 
 ### Settings Not Persisting or Loading
 
-1. **Store location**: `%APPDATA%\FocusLock\focuslock-settings.json` (on Windows).
+1. **Store location**: `%APPDATA%\wave\wave-settings.json` (on Windows).
 2. **Permissions**: Ensure user can write to `%APPDATA%`.
-3. **Corruption**: Delete `focuslock-settings.json` and restart app (settings reset to defaults).
+3. **Corruption**: Delete `wave-settings.json` and restart app (settings reset to defaults).
 4. **Form not updating**: Fixed in latest version - settings now properly load into form on startup.
 
 ### High CPU or Memory Usage
@@ -430,9 +430,9 @@ MIT License (see LICENSE file if included).
 
 ## 🆘 Support
 
-- **Logs**: Check `%APPDATA%\FocusLock\logs\` for diagnostics.
-- **Settings file**: `%APPDATA%\FocusLock\focuslock-settings.json`
-- **Task Manager**: Search "FocusLock" to verify background process.
+- **Logs**: Check `%APPDATA%\wave\logs\` for diagnostics.
+- **Settings file**: `%APPDATA%\wave\wave-settings.json`
+- **Task Manager**: Search "WAVE" to verify background process.
 - **Windows Event Viewer**: Check for system events related to `rundll32.exe`.
 
 ---
@@ -440,7 +440,7 @@ MIT License (see LICENSE file if included).
 ## 📊 File Structure
 
 ```
-FocusLock/
+WAVE/
 ├── package.json                    # Dependencies & scripts
 ├── electron-builder.yml            # Installer config
 ├── electron-vite.config.ts         # Build config
@@ -505,7 +505,7 @@ FocusLock/
 
 ```
 ┌──────────────────────────────────────────────────┐
-│  🔒 FocusLock                                    │
+│  🌊 WAVE (Work And Vital Energy)                │
 │  Enforce focus through automated OS-level breaks│
 └──────────────────────────────────────────────────┘
 
@@ -544,7 +544,7 @@ FocusLock/
 ### System Tray Menu
 
 ```
-📎 FocusLock (Right-click)
+📎 WAVE (Right-click)
 ├─ Dashboard
 ├─ Pause Cycle
 ├─ Lock Now
