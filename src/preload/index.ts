@@ -46,6 +46,11 @@ const api = {
   uploadLogo: () => ipcRenderer.invoke('logo:upload'),
   resolveLogoPath: (path: string) => ipcRenderer.invoke('logo:resolvePath', path),
 
+  // App monitoring
+  getAvailableApps: () => ipcRenderer.invoke('apps:getAvailable'),
+  scanInstalledApps: () => ipcRenderer.invoke('apps:scan'),
+  getAppStates: () => ipcRenderer.invoke('apps:getStates'),
+
   // Event listeners
   onCycleUpdate: (callback: (payload: import('../shared/types').CycleUpdate) => void) => {
     ipcRenderer.on('cycle:update', (_event, payload) => callback(payload));

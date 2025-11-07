@@ -1,33 +1,8 @@
-import { Settings, CycleStatus, CycleUpdate } from './types';
+import { Settings } from '../types/settings.types';
 
 // Strict typing for IPC handlers and listeners
-
-export interface IPCHandlers {
-  'settings:get': () => Promise<Settings>;
-  'settings:set': (settings: Partial<Settings>) => Promise<Settings>;
-  'settings:validate': (settings: Partial<Settings>) => Promise<{ valid: boolean; errors: string[] }>;
-  'cycle:status': () => Promise<CycleStatus>;
-  'cycle:pause': () => Promise<void>;
-  'cycle:resume': () => Promise<void>;
-  'cycle:lockNow': () => Promise<void>;
-  'cycle:reset': () => Promise<void>;
-  'autostart:get': () => Promise<boolean>;
-  'autostart:set': (enabled: boolean) => Promise<void>;
-  'app:getVersion': () => Promise<string>;
-  'logo:getAvailable': () => Promise<string[]>;
-  'logo:upload': () => Promise<{ success: boolean; filename?: string; error?: string }>;
-  'logo:resolvePath': (path: string) => Promise<string>;
-}
-
-export interface IPCListeners {
-  'cycle:update': (payload: CycleUpdate) => void;
-  'cycle:phase-changed': (phase: string) => void;
-  'window:close': () => void;
-  'window:show': () => void;
-}
-
-export type IPCHandlerKeys = keyof IPCHandlers;
-export type IPCListenerKeys = keyof IPCListeners;
+// Type definitions moved to src/types/ipc.types.ts
+export * from '../types/ipc.types';
 
 export function validateSettingsInput(settings: Partial<Settings>): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
@@ -54,6 +29,14 @@ export function validateSettingsInput(settings: Partial<Settings>): { valid: boo
 
   if (settings.enableLogging !== undefined && typeof settings.enableLogging !== 'boolean') {
     errors.push('enableLogging must be a boolean');
+  }
+
+  if (settings.excludedApps !== undefined) {
+    if (!Array.isArray(settings.excludedApps)) {
+      errors.push('excludedApps must be an array');
+    } else if (!settings.excludedApps.every((app) => typeof app === 'string')) {
+      errors.push('excludedApps must be an array of strings');
+    }
   }
 
   return {

@@ -1,4 +1,26 @@
 "use strict";
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
 const require$$1 = require("electron");
 const path$6 = require("path");
 const fs$3 = require("fs");
@@ -7,6 +29,7 @@ const require$$3$1 = require("crypto");
 const require$$4 = require("assert");
 const require$$5 = require("events");
 const require$$1$1 = require("os");
+const child_process = require("child_process");
 const fs$4 = require("fs/promises");
 const is = {
   dev: !require$$1.app.isPackaged
@@ -6935,7 +6958,7 @@ const require$$3 = {
   properties,
   "default": true
 };
-(function(module, exports) {
+(function(module2, exports) {
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.MissingRefError = exports.ValidationError = exports.CodeGen = exports.Name = exports.nil = exports.stringify = exports.str = exports._ = exports.KeywordCxt = exports.Ajv = void 0;
   const core_12 = core$2;
@@ -6964,8 +6987,8 @@ const require$$3 = {
     }
   }
   exports.Ajv = Ajv;
-  module.exports = exports = Ajv;
-  module.exports.Ajv = Ajv;
+  module2.exports = exports = Ajv;
+  module2.exports.Ajv = Ajv;
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.default = Ajv;
   var validate_12 = validate;
@@ -7233,7 +7256,7 @@ var limit = {};
   };
   exports.default = formatLimitPlugin;
 })(limit);
-(function(module, exports) {
+(function(module2, exports) {
   Object.defineProperty(exports, "__esModule", { value: true });
   const formats_1 = formats;
   const limit_1 = limit;
@@ -7266,7 +7289,7 @@ var limit = {};
     for (const f of list)
       ajv2.addFormat(f, fs2[f]);
   }
-  module.exports = exports = formatsPlugin;
+  module2.exports = exports = formatsPlugin;
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.default = formatsPlugin;
 })(dist, dist.exports);
@@ -7384,14 +7407,14 @@ var constants$1 = {
 const debug$1 = typeof process === "object" && process.env && process.env.NODE_DEBUG && /\bsemver\b/i.test(process.env.NODE_DEBUG) ? (...args) => console.error("SEMVER", ...args) : () => {
 };
 var debug_1 = debug$1;
-(function(module, exports) {
+(function(module2, exports) {
   const {
     MAX_SAFE_COMPONENT_LENGTH: MAX_SAFE_COMPONENT_LENGTH2,
     MAX_SAFE_BUILD_LENGTH: MAX_SAFE_BUILD_LENGTH2,
     MAX_LENGTH: MAX_LENGTH2
   } = constants$1;
   const debug2 = debug_1;
-  exports = module.exports = {};
+  exports = module2.exports = {};
   const re2 = exports.re = [];
   const safeRe = exports.safeRe = [];
   const src = exports.src = [];
@@ -9025,7 +9048,7 @@ onetime$1.exports.callCount = (function_) => {
   return calledFunctions.get(function_);
 };
 var onetimeExports = onetime$1.exports;
-(function(module, exports) {
+(function(module2, exports) {
   var __classPrivateFieldSet = commonjsGlobal && commonjsGlobal.__classPrivateFieldSet || function(receiver, state, value, kind, f) {
     if (kind === "m") throw new TypeError("Private method is not writable");
     if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
@@ -9065,7 +9088,7 @@ var onetimeExports = onetime$1.exports;
   let parentDir = "";
   try {
     delete require.cache[__filename];
-    parentDir = path2.dirname((_b = (_a = module.parent) === null || _a === void 0 ? void 0 : _a.filename) !== null && _b !== void 0 ? _b : ".");
+    parentDir = path2.dirname((_b = (_a = module2.parent) === null || _a === void 0 ? void 0 : _a.filename) !== null && _b !== void 0 ? _b : ".");
   } catch (_c) {
   }
   const checkValueType = (key, value) => {
@@ -9479,8 +9502,8 @@ var onetimeExports = onetime$1.exports;
     }
   }
   exports.default = Conf2;
-  module.exports = Conf2;
-  module.exports.default = Conf2;
+  module2.exports = Conf2;
+  module2.exports.default = Conf2;
 })(source, source.exports);
 var sourceExports = source.exports;
 const path = path$6;
@@ -9547,9 +9570,9 @@ var electronStore = ElectronStore;
 const Store = /* @__PURE__ */ getDefaultExportFromCjs(electronStore);
 const DEFAULT_CUSTOMIZATION = {
   backgroundGradient: {
-    color1: "#73C8A9",
-    color2: "#389477",
-    color3: "#373B44"
+    color1: "#41AE98",
+    color2: "#346B60",
+    color3: "#272727"
   },
   breakTitle: {
     text: "Break Time",
@@ -9575,7 +9598,8 @@ const DEFAULT_SETTINGS = {
   startWithWindows: false,
   enableLogging: false,
   theme: "light",
-  customization: DEFAULT_CUSTOMIZATION
+  customization: DEFAULT_CUSTOMIZATION,
+  excludedApps: []
 };
 class SettingsStore {
   store;
@@ -9614,6 +9638,13 @@ class SettingsStore {
         customization: {
           type: "object",
           default: DEFAULT_SETTINGS.customization
+        },
+        excludedApps: {
+          type: "array",
+          items: {
+            type: "string"
+          },
+          default: DEFAULT_SETTINGS.excludedApps || []
         }
       },
       defaults: DEFAULT_SETTINGS,
@@ -9628,7 +9659,8 @@ class SettingsStore {
       startWithWindows: this.store.get("startWithWindows"),
       enableLogging: this.store.get("enableLogging"),
       theme: this.store.get("theme") || "light",
-      customization: this.store.get("customization") || DEFAULT_SETTINGS.customization
+      customization: this.store.get("customization") || DEFAULT_SETTINGS.customization,
+      excludedApps: this.store.get("excludedApps", DEFAULT_SETTINGS.excludedApps || [])
     };
   }
   setSettings(settings) {
@@ -9664,19 +9696,19 @@ function getAppAssetPath(isDirname, relativePath) {
   const appMediaPath = getAppMediaPath(isDirname);
   return path$6.join(appMediaPath, relativePath);
 }
-const logger$4 = new Logger("lock-window");
+const logger$5 = new Logger("lock-window");
 class LockWindow {
   windows = [];
   displayBounds = /* @__PURE__ */ new Map();
   create(lockDurationMs, showSkipButton) {
-    logger$4.info(`Creating lock windows with duration: ${lockDurationMs}ms, showSkipButton: ${showSkipButton}`);
+    logger$5.info(`Creating lock windows with duration: ${lockDurationMs}ms, showSkipButton: ${showSkipButton}`);
     const displays = require$$1.screen.getAllDisplays();
-    logger$4.info(`Found ${displays.length} display(s)`);
+    logger$5.info(`Found ${displays.length} display(s)`);
     const iconPath = getAppAssetPath(__dirname, "Wave--icon.png");
     displays.forEach((display, index) => {
       const { x, y, width, height } = display.bounds;
       const isPrimary = display.id === require$$1.screen.getPrimaryDisplay().id;
-      logger$4.info(
+      logger$5.info(
         `Display ${index}: x=${x}, y=${y}, width=${width}, height=${height}, isPrimary=${isPrimary}, displayId=${display.id}`
       );
       const window2 = new require$$1.BrowserWindow({
@@ -9727,7 +9759,7 @@ class LockWindow {
           showSkipButton,
           startTime: Date.now()
         });
-        logger$4.info(`Positioning window ${index} at x=${x}, y=${y}, width=${width}, height=${height}`);
+        logger$5.info(`Positioning window ${index} at x=${x}, y=${y}, width=${width}, height=${height}`);
         window2.setAlwaysOnTop(true, "screen-saver", 1);
         window2.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
         window2.setFullScreenable(false);
@@ -9743,11 +9775,11 @@ class LockWindow {
         }
         setTimeout(() => {
           const finalBounds = window2.getBounds();
-          logger$4.info(
+          logger$5.info(
             `Final window ${index} bounds: x=${finalBounds.x}, y=${finalBounds.y}, width=${finalBounds.width}, height=${finalBounds.height}`
           );
           if (finalBounds.x !== x || finalBounds.y !== y) {
-            logger$4.warn(
+            logger$5.warn(
               `Window ${index} position mismatch! Expected (${x},${y}) but got (${finalBounds.x},${finalBounds.y}). Forcing position...`
             );
             window2.setBounds({ x, y, width, height }, false);
@@ -9771,7 +9803,7 @@ class LockWindow {
         const currentBounds = window2.getBounds();
         const intendedBounds = this.displayBounds.get(window2);
         if (intendedBounds && (currentBounds.x !== intendedBounds.x || currentBounds.y !== intendedBounds.y)) {
-          logger$4.warn(
+          logger$5.warn(
             `Window ${index} drifted! Repositioning from (${currentBounds.x},${currentBounds.y}) to (${intendedBounds.x},${intendedBounds.y})`
           );
           window2.setBounds(intendedBounds, false);
@@ -9782,7 +9814,7 @@ class LockWindow {
     return this.windows[0];
   }
   close() {
-    logger$4.info(`Closing ${this.windows.length} lock window(s)`);
+    logger$5.info(`Closing ${this.windows.length} lock window(s)`);
     const windowsToClose = [...this.windows];
     this.windows = [];
     this.displayBounds.clear();
@@ -9792,7 +9824,7 @@ class LockWindow {
         window2.destroy();
       }
     });
-    logger$4.info("All lock windows closed");
+    logger$5.info("All lock windows closed");
   }
   isOpen() {
     return this.windows.length > 0 && this.windows.some((w) => !w.isDestroyed());
@@ -9808,7 +9840,7 @@ class LockWindow {
     });
   }
 }
-const logger$3 = new Logger("cycle-manager");
+const logger$4 = new Logger("cycle-manager");
 class CycleManager {
   settings;
   state;
@@ -9816,10 +9848,14 @@ class CycleManager {
   mainWindow = null;
   systemWasAsleep = false;
   lockWindow;
-  constructor(settings, mainWindow2) {
+  appMonitor = null;
+  wasAutoPaused = false;
+  // Track if cycle was auto-paused due to app activity
+  constructor(settings, mainWindow2, appMonitor2) {
     this.settings = settings;
     this.mainWindow = mainWindow2;
     this.lockWindow = new LockWindow();
+    this.appMonitor = appMonitor2 || null;
     this.state = {
       phase: "work",
       workStartedAt: null,
@@ -9829,7 +9865,7 @@ class CycleManager {
     };
   }
   start() {
-    logger$3.info("Cycle started");
+    logger$4.info("Cycle started");
     this.state.workStartedAt = Date.now();
     this.state.phase = "work";
     if (this.intervalId) {
@@ -9844,11 +9880,11 @@ class CycleManager {
       clearInterval(this.intervalId);
       this.intervalId = null;
     }
-    logger$3.info("Cycle stopped");
+    logger$4.info("Cycle stopped");
   }
   pause() {
     if (this.state.phase === "paused") {
-      logger$3.warn("Already paused");
+      logger$4.warn("Already paused");
       return;
     }
     const status = this.getStatus();
@@ -9856,11 +9892,11 @@ class CycleManager {
     this.state.pausedAt = Date.now();
     this.state.phase = "paused";
     this.emit("cycle:phase-changed", "paused");
-    logger$3.info(`Cycle paused. Remaining: ${this.state.pausedRemaining}ms`);
+    logger$4.info(`Cycle paused. Remaining: ${this.state.pausedRemaining}ms`);
   }
   resume() {
     if (this.state.phase !== "paused") {
-      logger$3.warn("Not paused");
+      logger$4.warn("Not paused");
       return;
     }
     const now = Date.now();
@@ -9871,28 +9907,28 @@ class CycleManager {
     this.state.breakStartedAt = null;
     this.state.pausedAt = null;
     this.emit("cycle:phase-changed", "work");
-    logger$3.info("Cycle resumed");
+    logger$4.info("Cycle resumed");
   }
   async lockNow() {
-    logger$3.info("Lock requested immediately");
+    logger$4.info("Lock requested immediately");
     this.state.phase = "locking";
     await this.executeLock();
   }
   updateSettings(newSettings) {
     this.settings = newSettings;
-    logger$3.info(
+    logger$4.info(
       `Settings updated: work=${newSettings.workHours}h, lock=${newSettings.lockMinutes}m, showSkipButton=${newSettings.showSkipButton}`
     );
   }
   onSystemSuspend() {
-    logger$3.info("System suspended, cycle paused");
+    logger$4.info("System suspended, cycle paused");
     this.systemWasAsleep = true;
     if (this.state.phase !== "paused") {
       this.pause();
     }
   }
   onSystemResume() {
-    logger$3.info("System resumed, resuming cycle");
+    logger$4.info("System resumed, resuming cycle");
     if (this.systemWasAsleep) {
       this.systemWasAsleep = false;
       this.resume();
@@ -9900,6 +9936,7 @@ class CycleManager {
   }
   tick() {
     const status = this.getStatus();
+    this.checkExcludedApps();
     this.emit("cycle:update", {
       phase: this.state.phase,
       remainingMs: status.remainingMs,
@@ -9916,7 +9953,7 @@ class CycleManager {
   }
   handleWorkPhase(remainingMs) {
     if (remainingMs <= 0) {
-      logger$3.info("Work time elapsed, locking immediately");
+      logger$4.info("Work time elapsed, locking immediately");
       this.state.phase = "locking";
       this.executeLock();
     }
@@ -9926,7 +9963,7 @@ class CycleManager {
       this.lockWindow.updateTimer(remainingMs);
     }
     if (remainingMs <= 0) {
-      logger$3.info("Break time elapsed, restarting work cycle");
+      logger$4.info("Break time elapsed, restarting work cycle");
       this.lockWindow.close();
       this.state.phase = "work";
       this.state.workStartedAt = Date.now();
@@ -9936,16 +9973,16 @@ class CycleManager {
   }
   async executeLock() {
     try {
-      logger$3.info("Showing lock window...");
+      logger$4.info("Showing lock window...");
       const lockDurationMs = this.settings.lockMinutes * 60 * 1e3;
       this.lockWindow.create(lockDurationMs, this.settings.showSkipButton);
       this.state.phase = "break";
       this.state.breakStartedAt = Date.now();
       this.state.workStartedAt = null;
       this.emit("cycle:phase-changed", "break");
-      logger$3.info(`Break phase started (${this.settings.lockMinutes}m)`);
+      logger$4.info(`Break phase started (${this.settings.lockMinutes}m)`);
     } catch (err) {
-      logger$3.error("Failed to show lock window", err);
+      logger$4.error("Failed to show lock window", err);
     }
   }
   getStatus() {
@@ -9975,10 +10012,10 @@ class CycleManager {
   }
   skipLock() {
     if (this.state.phase !== "break") {
-      logger$3.warn(`Cannot skip: not in break phase (current phase: ${this.state.phase})`);
+      logger$4.warn(`Cannot skip: not in break phase (current phase: ${this.state.phase})`);
       return;
     }
-    logger$3.info("Lock skipped by user, closing windows and restarting work cycle");
+    logger$4.info("Lock skipped by user, closing windows and restarting work cycle");
     if (this.lockWindow.isOpen()) {
       this.lockWindow.close();
     }
@@ -9986,7 +10023,7 @@ class CycleManager {
     this.state.workStartedAt = Date.now();
     this.state.breakStartedAt = null;
     this.emit("cycle:phase-changed", "work");
-    logger$3.info("Work cycle restarted after skip");
+    logger$4.info("Work cycle restarted after skip");
   }
   emit(channel, data) {
     if (this.mainWindow && !this.mainWindow.isDestroyed()) {
@@ -10002,7 +10039,625 @@ class CycleManager {
       pausedRemaining: 0
     };
     this.emit("cycle:phase-changed", "work");
-    logger$3.info("Cycle reset");
+    logger$4.info("Cycle reset");
+  }
+  /**
+   * Check excluded apps and auto-pause/resume cycle accordingly
+   */
+  checkExcludedApps() {
+    if (!this.appMonitor || !this.settings.excludedApps || this.settings.excludedApps.length === 0) {
+      return;
+    }
+    if (this.state.phase === "break" || this.state.phase === "locking") {
+      return;
+    }
+    const shouldPause = this.appMonitor.shouldPauseCycle(this.settings.excludedApps);
+    if (shouldPause && this.state.phase !== "paused") {
+      logger$4.info("Auto-pausing cycle due to excluded app activity");
+      this.wasAutoPaused = true;
+      this.pause();
+    } else if (!shouldPause && this.state.phase === "paused" && this.wasAutoPaused) {
+      logger$4.info("Auto-resuming cycle as excluded app activity ended");
+      this.wasAutoPaused = false;
+      this.resume();
+    }
+  }
+}
+const execAsync = require$$1$2.promisify(child_process.exec);
+const logger$3 = new Logger("app-monitor");
+const MONITORED_APPS = [
+  // Communication Apps
+  {
+    id: "teams",
+    name: "Microsoft Teams",
+    processNames: ["ms-teams.exe", "Teams.exe"],
+    category: "communication"
+  },
+  {
+    id: "zoom",
+    name: "Zoom",
+    processNames: ["Zoom.exe", "ZoomWebinar.exe"],
+    category: "communication"
+  },
+  {
+    id: "skype",
+    name: "Skype",
+    processNames: ["Skype.exe"],
+    category: "communication"
+  },
+  {
+    id: "google-meet",
+    name: "Google Meet",
+    processNames: ["meet.exe", "GoogleMeet.exe"],
+    category: "communication"
+  },
+  {
+    id: "webex",
+    name: "Cisco Webex",
+    processNames: ["CiscoCollabHost.exe", "ptoneclk.exe", "WebexHost.exe"],
+    category: "communication"
+  },
+  {
+    id: "discord",
+    name: "Discord",
+    processNames: ["Discord.exe"],
+    category: "communication"
+  },
+  {
+    id: "slack",
+    name: "Slack",
+    processNames: ["slack.exe"],
+    category: "communication"
+  },
+  {
+    id: "whatsapp",
+    name: "WhatsApp Desktop",
+    processNames: ["WhatsApp.exe"],
+    category: "communication"
+  },
+  {
+    id: "telegram",
+    name: "Telegram Desktop",
+    processNames: ["Telegram.exe"],
+    category: "communication"
+  },
+  {
+    id: "signal",
+    name: "Signal Desktop",
+    processNames: ["Signal.exe"],
+    category: "communication"
+  },
+  {
+    id: "viber",
+    name: "Viber Desktop",
+    processNames: ["Viber.exe"],
+    category: "communication"
+  },
+  {
+    id: "messenger",
+    name: "Facebook Messenger Desktop",
+    processNames: ["Messenger.exe"],
+    category: "communication"
+  },
+  {
+    id: "line",
+    name: "LINE",
+    processNames: ["LINE.exe"],
+    category: "communication"
+  },
+  {
+    id: "wechat",
+    name: "WeChat",
+    processNames: ["WeChat.exe", "WeChatApp.exe"],
+    category: "communication"
+  },
+  {
+    id: "zoom-workplace",
+    name: "Zoom Workplace",
+    processNames: ["ZoomWorkplace.exe"],
+    category: "communication"
+  },
+  // Media Players
+  {
+    id: "vlc",
+    name: "VLC Media Player",
+    processNames: ["vlc.exe"],
+    category: "media"
+  },
+  {
+    id: "windows-media-player",
+    name: "Windows Media Player",
+    processNames: ["wmplayer.exe"],
+    category: "media"
+  },
+  {
+    id: "movies-tv",
+    name: "Movies & TV",
+    processNames: ["Video.UI.exe"],
+    category: "media"
+  },
+  {
+    id: "potplayer",
+    name: "PotPlayer",
+    processNames: ["PotPlayer.exe", "PotPlayerMini.exe", "PotPlayer64.exe", "PotPlayerMini64.exe"],
+    category: "media"
+  },
+  {
+    id: "kmplayer",
+    name: "KMPlayer",
+    processNames: ["KMPlayer.exe", "KMPlayer64.exe"],
+    category: "media"
+  },
+  {
+    id: "mpc-hc",
+    name: "MPC-HC",
+    processNames: ["mpc-hc.exe", "mpc-hc64.exe"],
+    category: "media"
+  },
+  {
+    id: "mpc-be",
+    name: "MPC-BE",
+    processNames: ["mpc-be.exe", "mpc-be64.exe"],
+    category: "media"
+  },
+  {
+    id: "kodi",
+    name: "Kodi",
+    processNames: ["kodi.exe"],
+    category: "media"
+  },
+  {
+    id: "plex-player",
+    name: "Plex Media Player",
+    processNames: ["PlexMediaPlayer.exe"],
+    category: "media"
+  },
+  {
+    id: "plex-htpc",
+    name: "Plex HTPC",
+    processNames: ["PlexHTPC.exe"],
+    category: "media"
+  },
+  {
+    id: "netflix",
+    name: "Netflix",
+    processNames: ["Netflix.exe"],
+    category: "media"
+  },
+  {
+    id: "prime-video",
+    name: "Amazon Prime Video",
+    processNames: ["PrimeVideo.exe", "AmazonPrimeVideo.exe"],
+    category: "media"
+  },
+  {
+    id: "disney-plus",
+    name: "Disney+",
+    processNames: ["DisneyPlus.exe"],
+    category: "media"
+  },
+  {
+    id: "youtube",
+    name: "YouTube",
+    processNames: ["YouTube.exe"],
+    category: "media"
+  },
+  {
+    id: "twitch",
+    name: "Twitch",
+    processNames: ["Twitch.exe"],
+    category: "media"
+  },
+  {
+    id: "spotify",
+    name: "Spotify",
+    processNames: ["Spotify.exe"],
+    category: "media"
+  },
+  {
+    id: "itunes",
+    name: "iTunes",
+    processNames: ["iTunes.exe"],
+    category: "media"
+  },
+  {
+    id: "realplayer",
+    name: "RealPlayer",
+    processNames: ["RealPlayer.exe"],
+    category: "media"
+  },
+  // Browsers
+  {
+    id: "chrome",
+    name: "Google Chrome",
+    processNames: ["chrome.exe"],
+    category: "browser"
+  },
+  {
+    id: "edge",
+    name: "Microsoft Edge",
+    processNames: ["msedge.exe"],
+    category: "browser"
+  },
+  {
+    id: "firefox",
+    name: "Mozilla Firefox",
+    processNames: ["firefox.exe"],
+    category: "browser"
+  },
+  {
+    id: "opera",
+    name: "Opera",
+    processNames: ["opera.exe"],
+    category: "browser"
+  },
+  {
+    id: "opera-gx",
+    name: "Opera GX",
+    processNames: ["opera_gx.exe"],
+    category: "browser"
+  },
+  {
+    id: "brave",
+    name: "Brave Browser",
+    processNames: ["brave.exe"],
+    category: "browser"
+  },
+  // Media Creation & Gaming
+  {
+    id: "obs",
+    name: "OBS Studio",
+    processNames: ["obs64.exe", "obs32.exe", "obs.exe"],
+    category: "media"
+  },
+  {
+    id: "steam",
+    name: "Steam",
+    processNames: ["steam.exe", "steamwebhelper.exe"],
+    category: "media"
+  },
+  {
+    id: "xbox",
+    name: "Xbox App",
+    processNames: ["XboxApp.exe", "GamingServices.exe"],
+    category: "media"
+  },
+  {
+    id: "geforce-experience",
+    name: "NVIDIA GeForce Experience",
+    processNames: ["NVIDIA GeForce Experience.exe", "NvContainer.exe"],
+    category: "media"
+  },
+  {
+    id: "shadowplay",
+    name: "ShadowPlay",
+    processNames: ["NvContainer.exe", "NVIDIA Share.exe"],
+    category: "media"
+  }
+];
+class AppMonitor {
+  intervalId = null;
+  currentStates = /* @__PURE__ */ new Map();
+  installedApps = [];
+  checkIntervalMs = 5e3;
+  // Check every 5 seconds for active state
+  onStateChangeCallback = null;
+  constructor() {
+    MONITORED_APPS.forEach((app2) => {
+      this.currentStates.set(app2.id, {
+        appId: app2.id,
+        isRunning: false,
+        isInCall: false,
+        isFullscreen: false
+      });
+    });
+  }
+  /**
+   * Start monitoring applications (only checks active states, not installation)
+   */
+  start() {
+    if (this.intervalId) {
+      logger$3.warn("App monitor already running");
+      return;
+    }
+    logger$3.info("Starting app monitor for active state checking");
+    this.checkAllApps();
+    this.intervalId = setInterval(() => {
+      this.checkAllApps();
+    }, this.checkIntervalMs);
+  }
+  /**
+   * Stop monitoring applications
+   */
+  stop() {
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+      this.intervalId = null;
+      logger$3.info("App monitor stopped");
+    }
+  }
+  /**
+   * Set callback for state changes
+   */
+  onStateChange(callback) {
+    this.onStateChangeCallback = callback;
+  }
+  /**
+   * Get current state of all monitored apps
+   */
+  getStates() {
+    return Array.from(this.currentStates.values());
+  }
+  /**
+   * Scan for installed apps on the system
+   * This is an expensive operation and should be called sparingly
+   */
+  async scanInstalledApps() {
+    logger$3.info("Scanning for installed applications...");
+    const installed = [];
+    for (const app2 of MONITORED_APPS) {
+      const isInstalled = await this.isAppInstalled(app2);
+      if (isInstalled) {
+        installed.push(app2);
+        logger$3.info(`Found installed app: ${app2.name}`);
+      }
+    }
+    this.installedApps = installed;
+    logger$3.info(`Scan complete. Found ${installed.length} installed apps`);
+    return installed;
+  }
+  /**
+   * Get list of installed apps (cached)
+   */
+  getInstalledApps() {
+    return this.installedApps;
+  }
+  /**
+   * Check if an app is installed on the system
+   */
+  async isAppInstalled(app2) {
+    try {
+      const searchTerms = [app2.name.split(" ")[0], ...app2.processNames.map((p) => p.replace(".exe", ""))];
+      for (const term of searchTerms) {
+        const registryCheck = await execAsync(
+          `powershell -Command "Get-ItemProperty HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\* -ErrorAction SilentlyContinue | Where-Object {$_.DisplayName -like '*${term}*'} | Select-Object -First 1"`,
+          { windowsHide: true, timeout: 3e3 }
+        ).catch(() => ({ stdout: "" }));
+        if (registryCheck.stdout.trim().length > 0) {
+          return true;
+        }
+      }
+      for (const term of searchTerms) {
+        const registry32Check = await execAsync(
+          `powershell -Command "Get-ItemProperty HKLM:\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\* -ErrorAction SilentlyContinue | Where-Object {$_.DisplayName -like '*${term}*'} | Select-Object -First 1"`,
+          { windowsHide: true, timeout: 3e3 }
+        ).catch(() => ({ stdout: "" }));
+        if (registry32Check.stdout.trim().length > 0) {
+          return true;
+        }
+      }
+      for (const term of searchTerms) {
+        const userRegistryCheck = await execAsync(
+          `powershell -Command "Get-ItemProperty HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\* -ErrorAction SilentlyContinue | Where-Object {$_.DisplayName -like '*${term}*'} | Select-Object -First 1"`,
+          { windowsHide: true, timeout: 3e3 }
+        ).catch(() => ({ stdout: "" }));
+        if (userRegistryCheck.stdout.trim().length > 0) {
+          return true;
+        }
+      }
+      for (const procName of app2.processNames) {
+        try {
+          const whereCheck = await execAsync(`where ${procName}`, {
+            windowsHide: true,
+            timeout: 2e3
+          });
+          if (whereCheck.stdout.trim().length > 0) {
+            return true;
+          }
+        } catch {
+        }
+      }
+      const commonPaths = [
+        `C:\\Program Files\\${app2.name}`,
+        `C:\\Program Files (x86)\\${app2.name}`,
+        `${process.env.LOCALAPPDATA || "C:\\Users\\Public\\AppData\\Local"}\\${app2.name}`,
+        `${process.env.APPDATA || "C:\\Users\\Public\\AppData\\Roaming"}\\${app2.name}`
+      ];
+      for (const dirPath of commonPaths) {
+        try {
+          const dirCheck = await execAsync(`powershell -Command "Test-Path '${dirPath}'"`, {
+            windowsHide: true,
+            timeout: 1e3
+          });
+          if (dirCheck.stdout.trim() === "True") {
+            return true;
+          }
+        } catch {
+        }
+      }
+      return false;
+    } catch (error2) {
+      logger$3.debug(`Error checking if ${app2.name} is installed: ${error2.message}`);
+      return false;
+    }
+  }
+  /**
+  * Check if any excluded apps are in active state (call or fullscreen)
+  */
+  shouldPauseCycle(excludedAppIds) {
+    for (const appId of excludedAppIds) {
+      const state = this.currentStates.get(appId);
+      if (state && state.isRunning && (state.isInCall || state.isFullscreen)) {
+        logger$3.info(`App ${appId} is in active state (call: ${state.isInCall}, fullscreen: ${state.isFullscreen})`);
+        return true;
+      }
+    }
+    return false;
+  }
+  /**
+   * Check all installed apps for active state
+   */
+  async checkAllApps() {
+    const appsToCheck = this.installedApps.length > 0 ? this.installedApps : MONITORED_APPS;
+    const promises = appsToCheck.map((app2) => this.checkApp(app2));
+    await Promise.all(promises);
+    if (this.onStateChangeCallback) {
+      this.onStateChangeCallback(this.getStates());
+    }
+  }
+  /**
+   * Check a specific app's state
+   */
+  async checkApp(app2) {
+    const prevState = this.currentStates.get(app2.id);
+    const newState = {
+      appId: app2.id,
+      isRunning: false,
+      isInCall: false,
+      isFullscreen: false
+    };
+    try {
+      newState.isRunning = await this.isProcessRunning(app2.processNames);
+      if (newState.isRunning) {
+        if (app2.category === "communication") {
+          newState.isInCall = await this.checkIfInCall(app2);
+        } else if (app2.category === "media" || app2.category === "browser") {
+          newState.isFullscreen = await this.checkIfFullscreen(app2);
+        }
+      }
+    } catch (error2) {
+      logger$3.error(`Error checking app ${app2.name}`, error2);
+    }
+    if (!prevState || prevState.isRunning !== newState.isRunning || prevState.isInCall !== newState.isInCall || prevState.isFullscreen !== newState.isFullscreen) {
+      this.currentStates.set(app2.id, newState);
+      logger$3.debug(
+        `App state changed: ${app2.name} - running: ${newState.isRunning}, inCall: ${newState.isInCall}, fullscreen: ${newState.isFullscreen}`
+      );
+    }
+  }
+  /**
+   * Check if any of the process names are running
+   */
+  async isProcessRunning(processNames) {
+    try {
+      const { stdout } = await execAsync("tasklist", { windowsHide: true });
+      const processes = stdout.toLowerCase();
+      return processNames.some((procName) => processes.includes(procName.toLowerCase()));
+    } catch (error2) {
+      logger$3.error("Error checking running processes", error2);
+      return false;
+    }
+  }
+  /**
+   * Check if communication app is in a call
+   * Uses heuristics: checks for specific window titles or process behavior
+   */
+  async checkIfInCall(app2) {
+    try {
+      if (app2.id === "teams") {
+        const { stdout } = await execAsync(
+          `powershell -Command "Get-Process | Where-Object {$_.ProcessName -match 'Teams' -and ($_.MainWindowTitle -match '\\| Microsoft Teams$' -or $_.MainWindowTitle -match 'Meeting in progress' -or $_.MainWindowTitle -match 'Call in progress')} | Select-Object MainWindowTitle -First 1"`,
+          { windowsHide: true }
+        );
+        const result = stdout.trim().length > 0 && (stdout.includes("Meeting in progress") || stdout.includes("Call in progress"));
+        if (result) {
+          logger$3.debug(`Teams call detected: ${stdout.trim()}`);
+        }
+        return result;
+      }
+      if (app2.id === "zoom") {
+        const { stdout } = await execAsync(
+          `powershell -Command "Get-Process zoom | Where-Object {$_.MainWindowTitle -like '*Zoom Meeting*'} | Select-Object -First 1"`,
+          { windowsHide: true }
+        );
+        return stdout.trim().length > 0;
+      }
+      if (app2.id === "discord") {
+        const { stdout } = await execAsync(
+          `powershell -Command "Get-Process discord | Where-Object {$_.MainWindowTitle -like '* - Voice*' -or $_.MainWindowTitle -like '* - Video*'} | Select-Object -First 1"`,
+          { windowsHide: true }
+        );
+        return stdout.trim().length > 0;
+      }
+      return false;
+    } catch (error2) {
+      logger$3.debug(`Cannot determine call state for ${app2.name}: ${error2.message}`);
+      return false;
+    }
+  }
+  async checkIfFullscreen(app2) {
+    try {
+      const fs2 = await import("fs/promises");
+      const path2 = await import("path");
+      const os2 = await import("os");
+      const tempDir = os2.tmpdir();
+      const scriptPath = path2.join(tempDir, `wave-fullscreen-check-${Date.now()}.ps1`);
+      const scriptContent = `Add-Type @"
+using System;
+using System.Runtime.InteropServices;
+public class WinAPI {
+    [DllImport("user32.dll")]
+    public static extern IntPtr GetForegroundWindow();
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+    [DllImport("user32.dll")]
+    public static extern int GetSystemMetrics(int nIndex);
+    [DllImport("user32.dll")]
+    public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+    [StructLayout(LayoutKind.Sequential)]
+    public struct RECT {
+        public int Left, Top, Right, Bottom;
+    }
+}
+"@
+
+$hwnd = [WinAPI]::GetForegroundWindow()
+$rect = New-Object WinAPI+RECT
+[WinAPI]::GetWindowRect($hwnd, [ref]$rect) | Out-Null
+$width = $rect.Right - $rect.Left
+$height = $rect.Bottom - $rect.Top
+$screenWidth = [WinAPI]::GetSystemMetrics(0)
+$screenHeight = [WinAPI]::GetSystemMetrics(1)
+$processId = 0
+[WinAPI]::GetWindowThreadProcessId($hwnd, [ref]$processId) | Out-Null
+$processName = (Get-Process -Id $processId -ErrorAction SilentlyContinue).ProcessName
+Write-Output "$width,$height,$screenWidth,$screenHeight,$processName"`;
+      await fs2.writeFile(scriptPath, scriptContent, "utf8");
+      try {
+        const { stdout } = await execAsync(`powershell -ExecutionPolicy Bypass -File "${scriptPath}"`, {
+          windowsHide: true,
+          timeout: 3e3
+        });
+        const parts = stdout.trim().split(",");
+        if (parts.length >= 5) {
+          const width = parseInt(parts[0]);
+          const height = parseInt(parts[1]);
+          const screenWidth = parseInt(parts[2]);
+          const screenHeight = parseInt(parts[3]);
+          const foregroundProcessName = parts[4].toLowerCase();
+          const isFullscreenSize = width >= screenWidth - 10 && height >= screenHeight - 10;
+          if (isFullscreenSize) {
+            for (const procName of app2.processNames) {
+              const cleanProcName = procName.replace(".exe", "").toLowerCase();
+              if (foregroundProcessName === cleanProcName) {
+                logger$3.info(
+                  `Fullscreen detected: ${app2.name} (${foregroundProcessName}) - ${width}x${height} on ${screenWidth}x${screenHeight}`
+                );
+                return true;
+              }
+            }
+          }
+        }
+        return false;
+      } finally {
+        await fs2.unlink(scriptPath).catch(() => {
+        });
+      }
+    } catch (error2) {
+      logger$3.debug(`Cannot determine fullscreen state for ${app2.name}: ${error2.message}`);
+      return false;
+    }
   }
 }
 function validateSettingsInput(settings) {
@@ -10025,6 +10680,13 @@ function validateSettingsInput(settings) {
   }
   if (settings.enableLogging !== void 0 && typeof settings.enableLogging !== "boolean") {
     errors2.push("enableLogging must be a boolean");
+  }
+  if (settings.excludedApps !== void 0) {
+    if (!Array.isArray(settings.excludedApps)) {
+      errors2.push("excludedApps must be an array");
+    } else if (!settings.excludedApps.every((app2) => typeof app2 === "string")) {
+      errors2.push("excludedApps must be an array of strings");
+    }
   }
   return {
     valid: errors2.length === 0,
@@ -10053,7 +10715,7 @@ function getAutoStart() {
   }
 }
 const logger$1 = new Logger("ipc");
-function handleIPC(settingsStore2, cycleManager2) {
+function handleIPC(settingsStore2, cycleManager2, appMonitor2) {
   require$$1.ipcMain.handle("settings:get", () => {
     return settingsStore2.getSettings();
   });
@@ -10208,13 +10870,88 @@ function handleIPC(settingsStore2, cycleManager2) {
       return relativePath;
     }
   });
+  require$$1.ipcMain.handle("apps:getAvailable", async () => {
+    if (!appMonitor2) {
+      logger$1.warn("App monitor not available");
+      return [];
+    }
+    try {
+      const apps = appMonitor2.getInstalledApps();
+      return apps.map((app2) => ({ id: app2.id, name: app2.name, category: app2.category }));
+    } catch (error2) {
+      const errorMsg = error2 instanceof Error ? error2.message : "Unknown error";
+      logger$1.error("Failed to get available apps", new Error(errorMsg));
+      return [];
+    }
+  });
+  require$$1.ipcMain.handle("apps:scan", async () => {
+    if (!appMonitor2) {
+      logger$1.warn("App monitor not available");
+      return [];
+    }
+    try {
+      logger$1.info("Scanning for installed apps via IPC");
+      const apps = await appMonitor2.scanInstalledApps();
+      return apps.map((app2) => ({ id: app2.id, name: app2.name, category: app2.category }));
+    } catch (error2) {
+      const errorMsg = error2 instanceof Error ? error2.message : "Unknown error";
+      logger$1.error("Failed to scan apps", new Error(errorMsg));
+      return [];
+    }
+  });
+  require$$1.ipcMain.handle("apps:getStates", () => {
+    if (!appMonitor2) {
+      logger$1.warn("App monitor not available");
+      return [];
+    }
+    try {
+      return appMonitor2.getStates();
+    } catch (error2) {
+      const errorMsg = error2 instanceof Error ? error2.message : "Unknown error";
+      logger$1.error("Failed to get app states", new Error(errorMsg));
+      return [];
+    }
+  });
 }
 const logger = new Logger("main");
 let mainWindow = null;
+let splashWindow = null;
 let tray = null;
 const settingsStore = new SettingsStore();
 let cycleManager = null;
+let appMonitor = null;
 let isQuitting = false;
+const createSplashWindow = () => {
+  const iconPath = getAppAssetPath(__dirname, "Wave--icon.png");
+  splashWindow = new require$$1.BrowserWindow({
+    width: 600,
+    height: 550,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    resizable: false,
+    movable: false,
+    center: true,
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true
+    },
+    icon: iconPath
+  });
+  splashWindow.setMenu(null);
+  if (is.dev && process.env["ELECTRON_RENDERER_URL"]) {
+    splashWindow.loadURL(`${process.env["ELECTRON_RENDERER_URL"]}/splash.html`);
+  } else {
+    splashWindow.loadFile(path$6.join(__dirname, "../renderer/splash.html"));
+  }
+};
+const closeSplashWindow = () => {
+  if (splashWindow) {
+    splashWindow.close();
+    splashWindow = null;
+  }
+};
 const createWindow = () => {
   const iconPath = getAppAssetPath(__dirname, "Wave--icon.png");
   mainWindow = new require$$1.BrowserWindow({
@@ -10222,6 +10959,8 @@ const createWindow = () => {
     height: 700,
     minWidth: 600,
     minHeight: 500,
+    show: false,
+    // Don't show until ready-to-show event
     webPreferences: {
       preload: path$6.join(__dirname, "../preload/index.js"),
       contextIsolation: true,
@@ -10244,6 +10983,9 @@ const createWindow = () => {
   } else {
     mainWindow.loadFile(path$6.join(__dirname, "../renderer/index.html"));
   }
+  mainWindow.once("ready-to-show", () => {
+    mainWindow?.show();
+  });
   mainWindow.on("closed", () => {
     mainWindow = null;
   });
@@ -10371,12 +11113,19 @@ const createSingleInstance = () => {
     });
   }
 };
-const initializeCycleManager = () => {
+const initializeCycleManager = async () => {
   if (cycleManager) {
     cycleManager.stop();
   }
+  if (!appMonitor) {
+    appMonitor = new AppMonitor();
+    logger.info("Scanning for installed applications...");
+    await appMonitor.scanInstalledApps();
+    appMonitor.start();
+    logger.info("App monitor initialized and started");
+  }
   const settings = settingsStore.getSettings();
-  cycleManager = new CycleManager(settings, mainWindow);
+  cycleManager = new CycleManager(settings, mainWindow, appMonitor);
   cycleManager.start();
   logger.info(`Cycle manager initialized: workHours=${settings.workHours}, lockMinutes=${settings.lockMinutes}`);
 };
@@ -10428,6 +11177,7 @@ require$$1.protocol.registerSchemesAsPrivileged([
 ]);
 require$$1.app.on("ready", async () => {
   logger.info("App starting...");
+  createSplashWindow();
   require$$1.protocol.handle("media", async (request) => {
     try {
       const url = request.url.replace("media://", "").replace(/\/+$/, "");
@@ -10464,11 +11214,12 @@ require$$1.app.on("ready", async () => {
     }
   });
   createSingleInstance();
+  await initializeMediaDirectory();
+  await initializeCycleManager();
+  handleIPC(settingsStore, cycleManager, appMonitor);
+  closeSplashWindow();
   createWindow();
   createTray();
-  await initializeMediaDirectory();
-  initializeCycleManager();
-  handleIPC(settingsStore, cycleManager);
   const shortcutRegistered = require$$1.globalShortcut.register("CommandOrControl+Shift+U+L", () => {
     logger.info("Global shortcut triggered: Ctrl+Shift+U+L - Skipping lock");
     if (cycleManager) {
@@ -10504,6 +11255,9 @@ require$$1.app.on("before-quit", () => {
   isQuitting = true;
   if (cycleManager) {
     cycleManager.stop();
+  }
+  if (appMonitor) {
+    appMonitor.stop();
   }
   if (tray) {
     tray.destroy();

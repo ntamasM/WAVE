@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useSettings } from '../store/useSettings';
 import { updateSettings } from '../store/useSettings';
-import { DEFAULT_CUSTOMIZATION } from '../../shared/types';
-import type { CustomizationSettings } from '../../shared/types';
+import { DEFAULT_CUSTOMIZATION } from '../../types/settings.types';
+import type { CustomizationSettings } from '../../types/settings.types';
 import { showSuccess, showError, showInfo } from '../lib/toast';
 import { Separator } from '../components/Separator';
 import {

@@ -1,30 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { formatCompactTime } from '../lib/format';
-import type { CycleStatus } from '../../shared/types';
 import { FaClock, FaPlay, FaPause, FaCoffee } from 'react-icons/fa';
+import { useCycle } from '../context/CycleContext';
 
 export const StatusCard: React.FC = () => {
-  const [status, setStatus] = useState<CycleStatus | null>(null);
+  const { status, displayTime, isLoading } = useCycle();
 
-  useEffect(() => {
-    // Load initial status
-    window.waveAPI.getCycleStatus().then(setStatus);
-
-    // Listen for updates
-    window.waveAPI.onCycleUpdate((update) => {
-      setStatus((prev) =>
-        prev
-          ? {
-              ...prev,
-              ...update,
-              endsAt: prev.endsAt,
-            }
-          : null
-      );
-    });
-  }, []);
-
-  if (!status) {
+  if (isLoading || !status) {
     return <div className="text-center py-8 text-bright-gray-500">Loading...</div>;
   }
 
@@ -71,7 +53,7 @@ export const StatusCard: React.FC = () => {
   };
 
   const phaseStyles = getPhaseStyles(status.phase);
-  const percentage = status.totalMs > 0 ? (status.remainingMs / status.totalMs) * 100 : 0;
+  const percentage = status.totalMs > 0 ? (displayTime / status.totalMs) * 100 : 0;
 
   return (
     <div className={`section-card p-6 border-2 ${phaseStyles.bg}`}>
@@ -92,7 +74,7 @@ export const StatusCard: React.FC = () => {
       {/* Timer Display */}
       <div className="mb-6 p-6 bg-white dark:bg-bright-gray-700 rounded-xl shadow-inner border border-bright-gray-200 dark:border-bright-gray-600 transition-colors duration-200">
         <p className={`text-center text-6xl font-mono font-bold ${phaseStyles.textColor}`}>
-          {formatCompactTime(status.remainingMs)}
+          {formatCompactTime(displayTime)}
         </p>
         <p className="text-center text-sm text-bright-gray-500 dark:text-bright-gray-400 mt-2">Remaining</p>
       </div>
@@ -119,7 +101,7 @@ export const StatusCard: React.FC = () => {
         <div className="bg-white dark:bg-bright-gray-700 p-4 rounded-xl shadow-sm border border-bright-gray-200 dark:border-bright-gray-600 transition-colors duration-200">
           <p className="text-bright-gray-600 dark:text-bright-gray-400 mb-1">Elapsed</p>
           <p className={`font-bold text-lg ${phaseStyles.textColor}`}>
-            {formatCompactTime(status.totalMs - status.remainingMs)}
+            {formatCompactTime(status.totalMs - displayTime)}
           </p>
         </div>
       </div>

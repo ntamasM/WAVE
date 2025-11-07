@@ -8,6 +8,7 @@ import { Settings } from './pages/Settings';
 import { Customization } from './pages/Customization';
 import { About } from './pages/About';
 import { useSettings } from './store/useSettings';
+import { CycleProvider } from './context/CycleContext';
 
 export const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<'home' | 'settings' | 'customization' | 'about'>('home');
@@ -39,23 +40,25 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-bright-gray-50 dark:bg-bright-gray-900 transition-colors duration-200">
-      <TitleBar currentPage={currentPage} onNavigate={setCurrentPage} />
-      <Layout>{renderPage()}</Layout>
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme={settings.theme === 'dark' ? 'dark' : 'light'}
-        className="toast-container"
-      />
-    </div>
+    <CycleProvider>
+      <div className="h-screen flex flex-col overflow-hidden bg-bright-gray-50 dark:bg-bright-gray-900 transition-colors duration-200">
+        <TitleBar currentPage={currentPage} onNavigate={setCurrentPage} />
+        <Layout>{renderPage()}</Layout>
+        <ToastContainer
+          position="top-right"
+          autoClose={3000}
+          hideProgressBar={false}
+          newestOnTop
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme={settings.theme === 'dark' ? 'dark' : 'light'}
+          className="toast-container"
+        />
+      </div>
+    </CycleProvider>
   );
 };
 

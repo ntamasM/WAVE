@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
-import type { Settings } from '../../shared/types';
+import type { Settings } from '../../types/settings.types';
+import type { SettingsListener } from '../../types/store.types';
 
 /**
  * Zustand-like store hook using React context
@@ -13,9 +14,9 @@ const initialSettings: Settings = {
   startWithWindows: true,
   enableLogging: true,
   theme: 'light',
+  excludedApps: [],
 };
 
-type SettingsListener = (settings: Settings) => void;
 let currentSettings = initialSettings;
 const listeners: Set<SettingsListener> = new Set();
 

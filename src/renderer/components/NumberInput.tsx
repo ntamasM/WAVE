@@ -1,16 +1,6 @@
 import React from 'react';
 import { FaMinus, FaPlus } from 'react-icons/fa';
-
-interface NumberInputProps {
-  value: number;
-  onChange: (value: number) => void;
-  min?: number;
-  max?: number;
-  placeholder?: string;
-  id?: string;
-  className?: string;
-  label?: string;
-}
+import { NumberInputProps } from '../../types/component.types';
 
 export const NumberInput: React.FC<NumberInputProps> = ({
   value,

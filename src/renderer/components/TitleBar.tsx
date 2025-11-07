@@ -1,10 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { FaHome, FaCog, FaPalette, FaInfoCircle, FaTimes, FaMinus, FaWindowMaximize } from 'react-icons/fa';
-
-interface TitleBarProps {
-  currentPage: 'home' | 'settings' | 'customization' | 'about';
-  onNavigate: (page: 'home' | 'settings' | 'customization' | 'about') => void;
-}
+import { TitleBarProps, NavigationPage } from '../../types/component.types';
 
 export const TitleBar: React.FC<TitleBarProps> = ({ currentPage, onNavigate }) => {
   const [logoUrl, setLogoUrl] = useState<string>('');
@@ -16,7 +12,7 @@ export const TitleBar: React.FC<TitleBarProps> = ({ currentPage, onNavigate }) =
     });
   }, []);
 
-  const navItems = [
+  const navItems: Array<{ id: NavigationPage; label: string; icon: typeof FaHome }> = [
     { id: 'home' as const, label: 'Home', icon: FaHome },
     { id: 'settings' as const, label: 'Settings', icon: FaCog },
     { id: 'customization' as const, label: 'Customization', icon: FaPalette },

@@ -4,6 +4,7 @@ import { is } from '@electron-toolkit/utils';
 import { Logger } from './logger';
 import { SettingsStore } from './settings-store';
 import { CycleManager } from './cycle-manager';
+import { AppMonitor } from './app-monitor';
 import { handleIPC } from './ipc';
 import { setAutoStart, getAutoStart } from './autostart';
 import { getAppAssetPath, getMediaPath } from './resources';
@@ -12,10 +13,47 @@ import { existsSync } from 'fs';
 
 const logger = new Logger('main');
 let mainWindow: BrowserWindow | null = null;
+let splashWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 const settingsStore = new SettingsStore();
 let cycleManager: CycleManager | null = null;
+let appMonitor: AppMonitor | null = null;
 let isQuitting = false;
+
+const createSplashWindow = (): void => {
+  const iconPath = getAppAssetPath(__dirname, 'Wave--icon.png');
+  splashWindow = new BrowserWindow({
+    width: 600,
+    height: 550,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    resizable: false,
+    movable: false,
+    center: true,
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+    },
+    icon: iconPath,
+  });
+
+  splashWindow.setMenu(null);
+
+  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+    splashWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}/splash.html`);
+  } else {
+    splashWindow.loadFile(join(__dirname, '../renderer/splash.html'));
+  }
+};
+
+const closeSplashWindow = (): void => {
+  if (splashWindow) {
+    splashWindow.close();
+    splashWindow = null;
+  }
+};
 
 const createWindow = (): void => {
   const iconPath = getAppAssetPath(__dirname, 'Wave--icon.png');
@@ -24,6 +62,7 @@ const createWindow = (): void => {
     height: 700,
     minWidth: 600,
     minHeight: 500,
+    show: false, // Don't show until ready-to-show event
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
@@ -48,6 +87,11 @@ const createWindow = (): void => {
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
   }
+
+  // Show window when ready to prevent visual flash
+  mainWindow.once('ready-to-show', () => {
+    mainWindow?.show();
+  });
 
   mainWindow.on('closed', () => {
     mainWindow = null;
@@ -198,13 +242,23 @@ const createSingleInstance = (): void => {
   }
 };
 
-const initializeCycleManager = (): void => {
+const initializeCycleManager = async (): Promise<void> => {
   if (cycleManager) {
     cycleManager.stop();
   }
 
+  // Initialize app monitor if not already initialized
+  if (!appMonitor) {
+    appMonitor = new AppMonitor();
+    // Scan for installed apps on first run
+    logger.info('Scanning for installed applications...');
+    await appMonitor.scanInstalledApps();
+    appMonitor.start();
+    logger.info('App monitor initialized and started');
+  }
+
   const settings = settingsStore.getSettings();
-  cycleManager = new CycleManager(settings, mainWindow);
+  cycleManager = new CycleManager(settings, mainWindow, appMonitor);
   cycleManager.start();
 
   logger.info(`Cycle manager initialized: workHours=${settings.workHours}, lockMinutes=${settings.lockMinutes}`);
@@ -269,6 +323,9 @@ protocol.registerSchemesAsPrivileged([
 app.on('ready', async () => {
   logger.info('App starting...');
 
+  // Show splash screen immediately
+  createSplashWindow();
+
   // Register media protocol handler (for user customizable media)
   protocol.handle('media', async (request) => {
     try {
@@ -318,17 +375,22 @@ app.on('ready', async () => {
   });
 
   createSingleInstance();
-  createWindow();
-  createTray();
 
   // Initialize media directory
   await initializeMediaDirectory();
 
-  // Initialize cycle manager FIRST
-  initializeCycleManager();
+  // Initialize cycle manager FIRST (now async) - this takes time to scan apps
+  await initializeCycleManager();
 
-  // Setup IPC handlers AFTER cycle manager is initialized
-  handleIPC(settingsStore, cycleManager!);
+  // Setup IPC handlers BEFORE creating window
+  handleIPC(settingsStore, cycleManager!, appMonitor!);
+
+  // Close splash window and show main window
+  closeSplashWindow();
+
+  // NOW create window and tray after IPC handlers are ready
+  createWindow();
+  createTray();
 
   // Register global shortcut to skip lock (Ctrl+Shift+U+L)
   const shortcutRegistered = globalShortcut.register('CommandOrControl+Shift+U+L', () => {
@@ -376,6 +438,9 @@ app.on('before-quit', () => {
   isQuitting = true;
   if (cycleManager) {
     cycleManager.stop();
+  }
+  if (appMonitor) {
+    appMonitor.stop();
   }
   if (tray) {
     tray.destroy();

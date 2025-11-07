@@ -30,26 +30,14 @@ export interface Settings {
   enableLogging: boolean;
   theme?: 'light' | 'dark';
   customization?: CustomizationSettings;
-}
-
-export interface CycleStatus {
-  phase: 'work' | 'break' | 'paused' | 'locking';
-  endsAt: number | null;
-  remainingMs: number;
-  totalMs: number;
-}
-
-export interface CycleUpdate {
-  phase: 'work' | 'break' | 'paused' | 'locking';
-  remainingMs: number;
-  totalMs: number;
+  excludedApps?: string[]; // Array of app IDs to monitor and pause cycle for
 }
 
 export const DEFAULT_CUSTOMIZATION: CustomizationSettings = {
   backgroundGradient: {
-    color1: '#73C8A9',
-    color2: '#389477',
-    color3: '#373B44',
+    color1: '#41AE98',
+    color2: '#346B60',
+    color3: '#272727',
   },
   breakTitle: {
     text: 'Break Time',
@@ -77,4 +65,5 @@ export const DEFAULT_SETTINGS: Settings = {
   enableLogging: false,
   theme: 'light',
   customization: DEFAULT_CUSTOMIZATION,
+  excludedApps: [],
 };

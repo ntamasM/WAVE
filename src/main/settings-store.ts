@@ -1,5 +1,5 @@
 import Store from 'electron-store';
-import { Settings, DEFAULT_SETTINGS } from '../shared/types';
+import { Settings, DEFAULT_SETTINGS } from '../types/settings.types';
 
 export class SettingsStore {
   private store: Store<Settings>;
@@ -40,6 +40,13 @@ export class SettingsStore {
           type: 'object',
           default: DEFAULT_SETTINGS.customization,
         },
+        excludedApps: {
+          type: 'array',
+          items: {
+            type: 'string',
+          },
+          default: DEFAULT_SETTINGS.excludedApps || [],
+        },
       },
       defaults: DEFAULT_SETTINGS,
       name: 'wave-settings',
@@ -55,6 +62,7 @@ export class SettingsStore {
       enableLogging: this.store.get('enableLogging') as boolean,
       theme: (this.store.get('theme') as 'light' | 'dark') || 'light',
       customization: this.store.get('customization') || DEFAULT_SETTINGS.customization,
+      excludedApps: this.store.get('excludedApps', DEFAULT_SETTINGS.excludedApps || []) as string[],
     };
   }
 

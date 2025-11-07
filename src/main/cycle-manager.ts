@@ -1,19 +1,11 @@
 import { BrowserWindow } from 'electron';
-import { Settings, CycleStatus } from '../shared/types';
+import { Settings } from '../types/settings.types';
+import { CycleStatus, CycleState } from '../types/cycle.types';
 import { LockWindow } from './lock-window';
 import { Logger } from './logger';
+import { AppMonitor } from './app-monitor';
 
 const logger = new Logger('cycle-manager');
-
-type CyclePhase = 'work' | 'break' | 'paused' | 'locking';
-
-interface CycleState {
-  phase: CyclePhase;
-  workStartedAt: number | null;
-  breakStartedAt: number | null;
-  pausedAt: number | null;
-  pausedRemaining: number; // remaining ms when paused
-}
 
 /**
  * CycleManager implements the state machine:
@@ -28,11 +20,14 @@ export class CycleManager {
   private mainWindow: BrowserWindow | null = null;
   private systemWasAsleep = false;
   private lockWindow: LockWindow;
+  private appMonitor: AppMonitor | null = null;
+  private wasAutoPaused = false; // Track if cycle was auto-paused due to app activity
 
-  constructor(settings: Settings, mainWindow: BrowserWindow | null) {
+  constructor(settings: Settings, mainWindow: BrowserWindow | null, appMonitor?: AppMonitor) {
     this.settings = settings;
     this.mainWindow = mainWindow;
     this.lockWindow = new LockWindow();
+    this.appMonitor = appMonitor || null;
     this.state = {
       phase: 'work',
       workStartedAt: null,
@@ -133,6 +128,9 @@ export class CycleManager {
 
   private tick(): void {
     const status = this.getStatus();
+
+    // Check if we need to auto-pause/resume based on excluded apps
+    this.checkExcludedApps();
 
     // Emit update for UI
     this.emit('cycle:update', {
@@ -264,5 +262,33 @@ export class CycleManager {
     };
     this.emit('cycle:phase-changed', 'work');
     logger.info('Cycle reset');
+  }
+
+  /**
+   * Check excluded apps and auto-pause/resume cycle accordingly
+   */
+  private checkExcludedApps(): void {
+    if (!this.appMonitor || !this.settings.excludedApps || this.settings.excludedApps.length === 0) {
+      return;
+    }
+
+    // Skip if we're in break phase (don't interrupt breaks)
+    if (this.state.phase === 'break' || this.state.phase === 'locking') {
+      return;
+    }
+
+    const shouldPause = this.appMonitor.shouldPauseCycle(this.settings.excludedApps);
+
+    if (shouldPause && this.state.phase !== 'paused') {
+      // Auto-pause the cycle
+      logger.info('Auto-pausing cycle due to excluded app activity');
+      this.wasAutoPaused = true;
+      this.pause();
+    } else if (!shouldPause && this.state.phase === 'paused' && this.wasAutoPaused) {
+      // Auto-resume the cycle
+      logger.info('Auto-resuming cycle as excluded app activity ended');
+      this.wasAutoPaused = false;
+      this.resume();
+    }
   }
 }

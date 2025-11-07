@@ -4,13 +4,14 @@ import { CycleManager } from './cycle-manager';
 import { validateSettingsInput } from '../shared/ipc';
 import { getAutoStart, setAutoStart } from './autostart';
 import { Logger } from './logger';
+import { AppMonitor } from './app-monitor';
 import path from 'path';
 import fs from 'fs/promises';
 import { existsSync } from 'fs';
 
 const logger = new Logger('ipc');
 
-export function handleIPC(settingsStore: SettingsStore, cycleManager: CycleManager): void {
+export function handleIPC(settingsStore: SettingsStore, cycleManager: CycleManager, appMonitor?: AppMonitor): void {
   /**
    * Settings endpoints
    */
@@ -239,6 +240,54 @@ export function handleIPC(settingsStore: SettingsStore, cycleManager: CycleManag
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';
       logger.error('Failed to resolve logo path', new Error(errorMsg));
       return relativePath; // Return original path as fallback
+    }
+  });
+
+  /**
+   * App monitoring endpoints
+   */
+  ipcMain.handle('apps:getAvailable', async () => {
+    if (!appMonitor) {
+      logger.warn('App monitor not available');
+      return [];
+    }
+    try {
+      const apps = appMonitor.getInstalledApps();
+      return apps.map((app) => ({ id: app.id, name: app.name, category: app.category }));
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      logger.error('Failed to get available apps', new Error(errorMsg));
+      return [];
+    }
+  });
+
+  ipcMain.handle('apps:scan', async () => {
+    if (!appMonitor) {
+      logger.warn('App monitor not available');
+      return [];
+    }
+    try {
+      logger.info('Scanning for installed apps via IPC');
+      const apps = await appMonitor.scanInstalledApps();
+      return apps.map((app) => ({ id: app.id, name: app.name, category: app.category }));
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      logger.error('Failed to scan apps', new Error(errorMsg));
+      return [];
+    }
+  });
+
+  ipcMain.handle('apps:getStates', () => {
+    if (!appMonitor) {
+      logger.warn('App monitor not available');
+      return [];
+    }
+    try {
+      return appMonitor.getStates();
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      logger.error('Failed to get app states', new Error(errorMsg));
+      return [];
     }
   });
 }

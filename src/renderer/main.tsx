@@ -2,16 +2,11 @@ import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import './styles/index.css';
-import type { CustomizationSettings } from '../shared/types';
-import { DEFAULT_CUSTOMIZATION } from '../shared/types';
+import type { CustomizationSettings } from '../types/settings.types';
+import { DEFAULT_CUSTOMIZATION } from '../types/settings.types';
+import type { LockData } from '../types/component.types';
 
 // Lock Screen Component
-interface LockData {
-  lockDurationMs: number;
-  showSkipButton: boolean;
-  startTime: number;
-}
-
 const LockScreen: React.FC = () => {
   const [remainingMs, setRemainingMs] = useState<number>(0);
   const [totalMs, setTotalMs] = useState<number>(0);

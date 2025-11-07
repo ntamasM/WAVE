@@ -1,13 +1,9 @@
 import React from 'react';
 import { FaHome, FaCog, FaInfoCircle, FaPalette } from 'react-icons/fa';
-
-interface NavigationProps {
-  currentPage: 'home' | 'settings' | 'customization' | 'about';
-  onNavigate: (page: 'home' | 'settings' | 'customization' | 'about') => void;
-}
+import { NavigationProps, NavigationPage } from '../../types/component.types';
 
 export const Navigation: React.FC<NavigationProps> = ({ currentPage, onNavigate }) => {
-  const navItems = [
+  const navItems: Array<{ id: NavigationPage; label: string; icon: typeof FaHome }> = [
     { id: 'home' as const, label: 'Home', icon: FaHome },
     { id: 'settings' as const, label: 'Settings', icon: FaCog },
     { id: 'customization' as const, label: 'Customization', icon: FaPalette },

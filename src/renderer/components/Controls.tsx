@@ -1,26 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import type { CycleStatus } from '../../shared/types';
+import React, { useState } from 'react';
 import { FaPause, FaPlay, FaLock, FaRedo, FaClock } from 'react-icons/fa';
 import { showSuccess, showError, showInfo } from '../lib/toast';
+import { useCycle } from '../context/CycleContext';
 
 export const Controls: React.FC = () => {
-  const [status, setStatus] = useState<CycleStatus | null>(null);
+  const { status, refreshStatus } = useCycle();
   const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    window.waveAPI.getCycleStatus().then(setStatus);
-
-    window.waveAPI.onCycleUpdate((update) => {
-      setStatus((prev) =>
-        prev
-          ? {
-              ...prev,
-              ...update,
-            }
-          : null
-      );
-    });
-  }, []);
 
   const handlePauseResume = async () => {
     setIsLoading(true);
@@ -32,6 +17,7 @@ export const Controls: React.FC = () => {
         await window.waveAPI.pauseCycle();
         showInfo('Cycle paused');
       }
+      await refreshStatus();
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
       showError(`Failed to ${status?.phase === 'paused' ? 'resume' : 'pause'}: ${errorMsg}`);
@@ -58,6 +44,7 @@ export const Controls: React.FC = () => {
     try {
       await window.waveAPI.resetCycle();
       showSuccess('Cycle reset successfully');
+      await refreshStatus();
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
       showError(`Failed to reset: ${errorMsg}`);

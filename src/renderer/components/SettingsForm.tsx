@@ -1,14 +1,32 @@
 import React from 'react';
 import { useSettings } from '../store/useSettings';
 import { updateSettings } from '../store/useSettings';
-import { useState } from 'react';
-import { FaCog, FaClock, FaCoffee, FaWindowMaximize, FaSave, FaFolder, FaMoon, FaSun } from 'react-icons/fa';
+import { useState, useEffect } from 'react';
+import {
+  FaCog,
+  FaClock,
+  FaCoffee,
+  FaWindowMaximize,
+  FaSave,
+  FaFolder,
+  FaMoon,
+  FaSun,
+  FaBan,
+  FaSync,
+  FaList,
+  FaTh,
+  FaCheckSquare,
+  FaSquare,
+} from 'react-icons/fa';
 import { showSuccess, showError, showInfo } from '../lib/toast';
 import { NumberInput } from './NumberInput';
 
 export const SettingsForm: React.FC = () => {
   const { settings } = useSettings();
   const [localSettings, setLocalSettings] = useState(settings);
+  const [availableApps, setAvailableApps] = useState<Array<{ id: string; name: string; category: string }>>([]);
+  const [loadingApps, setLoadingApps] = useState(true);
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
 
   // Separate state for hours and minutes
   const [workHours, setWorkHours] = useState(Math.floor(settings.workHours));
@@ -21,11 +39,67 @@ export const SettingsForm: React.FC = () => {
     setWorkMinutes(Math.round((settings.workHours % 1) * 60));
   }, [settings]);
 
-  const handleChange = (field: keyof typeof settings, value: number | boolean | string) => {
+  // Load available apps on mount
+  useEffect(() => {
+    const loadApps = async () => {
+      try {
+        setLoadingApps(true);
+        const apps = await window.waveAPI.getAvailableApps();
+        setAvailableApps(apps);
+      } catch (error) {
+        showError('Failed to load available apps');
+        console.error(error);
+      } finally {
+        setLoadingApps(false);
+      }
+    };
+
+    loadApps();
+  }, []);
+
+  const handleChange = (field: keyof typeof settings, value: number | boolean | string | string[]) => {
     setLocalSettings({
       ...localSettings,
       [field]: value,
     });
+  };
+
+  const handleExcludedAppToggle = (appId: string) => {
+    const currentExcluded = localSettings.excludedApps || [];
+    const newExcluded = currentExcluded.includes(appId)
+      ? currentExcluded.filter((id) => id !== appId)
+      : [...currentExcluded, appId];
+
+    handleChange('excludedApps', newExcluded);
+  };
+
+  const handleSelectAll = () => {
+    const allAppIds = availableApps.map((app) => app.id);
+    const currentExcluded = localSettings.excludedApps || [];
+    const allSelected = allAppIds.every((id) => currentExcluded.includes(id));
+
+    if (allSelected) {
+      // Deselect all
+      handleChange('excludedApps', []);
+    } else {
+      // Select all
+      handleChange('excludedApps', allAppIds);
+    }
+  };
+
+  const handleRefreshApps = async () => {
+    try {
+      setLoadingApps(true);
+      showInfo('Scanning for installed applications...');
+      const apps = await window.waveAPI.scanInstalledApps();
+      setAvailableApps(apps);
+      showSuccess(`Found ${apps.length} installed applications`);
+    } catch (error) {
+      showError('Failed to scan for apps');
+      console.error(error);
+    } finally {
+      setLoadingApps(false);
+    }
   };
 
   const handleWorkTimeChange = (hours: number, minutes: number) => {
@@ -40,10 +114,10 @@ export const SettingsForm: React.FC = () => {
 
   const handleSave = async () => {
     try {
-      const changes: Record<string, number | boolean | string> = {};
+      const changes: Record<string, number | boolean | string | string[]> = {};
       Object.keys(localSettings).forEach((key) => {
         if (localSettings[key as keyof typeof settings] !== settings[key as keyof typeof settings]) {
-          changes[key] = localSettings[key as keyof typeof settings] as number | boolean | string;
+          changes[key] = localSettings[key as keyof typeof settings] as number | boolean | string | string[];
         }
       });
 
@@ -228,6 +302,139 @@ export const SettingsForm: React.FC = () => {
                 </label>
                 <p className="text-secondary">Display a skip button during breaks to allow ending the break early</p>
               </div>
+            </div>
+
+            {/* Excluded Applications */}
+            <div className="pt-4 border-t border-bright-gray-200 dark:border-bright-gray-700">
+              <div className="mb-3">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <h4 className="form-label flex items-center gap-2 mb-1">
+                      <FaBan className="text-vista-blue-600 dark:text-vista-blue-400" />
+                      Excluded Applications
+                    </h4>
+                    <p className="text-secondary text-sm">
+                      WAVE will automatically pause when you&apos;re in a call or watching videos fullscreen in these
+                      apps
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {/* View Toggle Buttons */}
+                    <div className="flex bg-bright-gray-100 dark:bg-bright-gray-800 rounded-lg p-1">
+                      <button
+                        type="button"
+                        onClick={() => setViewMode('list')}
+                        className={`p-2 rounded transition-colors ${
+                          viewMode === 'list'
+                            ? 'bg-white dark:bg-bright-gray-700 text-vista-blue-600 dark:text-vista-blue-400 shadow-sm'
+                            : 'text-bright-gray-600 dark:text-bright-gray-400 hover:text-vista-blue-600 dark:hover:text-vista-blue-400'
+                        }`}
+                        title="List view"
+                      >
+                        <FaList className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setViewMode('grid')}
+                        className={`p-2 rounded transition-colors ${
+                          viewMode === 'grid'
+                            ? 'bg-white dark:bg-bright-gray-700 text-vista-blue-600 dark:text-vista-blue-400 shadow-sm'
+                            : 'text-bright-gray-600 dark:text-bright-gray-400 hover:text-vista-blue-600 dark:hover:text-vista-blue-400'
+                        }`}
+                        title="Grid view"
+                      >
+                        <FaTh className="h-4 w-4" />
+                      </button>
+                    </div>
+
+                    {/* Select All Button */}
+                    <button
+                      type="button"
+                      onClick={handleSelectAll}
+                      disabled={loadingApps || availableApps.length === 0}
+                      className="btn-secondary flex items-center gap-2"
+                      title={
+                        availableApps.length > 0 &&
+                        availableApps.every((app) => (localSettings.excludedApps || []).includes(app.id))
+                          ? 'Deselect all'
+                          : 'Select all'
+                      }
+                    >
+                      {availableApps.length > 0 &&
+                      availableApps.every((app) => (localSettings.excludedApps || []).includes(app.id)) ? (
+                        <>
+                          <FaSquare className="h-4 w-4" />
+                          Deselect All
+                        </>
+                      ) : (
+                        <>
+                          <FaCheckSquare className="h-4 w-4" />
+                          Select All
+                        </>
+                      )}
+                    </button>
+
+                    {/* Refresh Button */}
+                    <button
+                      type="button"
+                      onClick={handleRefreshApps}
+                      disabled={loadingApps}
+                      className="btn-secondary flex items-center gap-2"
+                      title="Scan for newly installed applications"
+                    >
+                      <FaSync className={`h-4 w-4 ${loadingApps ? 'animate-spin' : ''}`} />
+                      Refresh
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {loadingApps ? (
+                <div className="text-center py-4">
+                  <p className="text-secondary">Scanning for installed applications...</p>
+                </div>
+              ) : availableApps.length === 0 ? (
+                <div className="text-center py-4">
+                  <p className="text-secondary">
+                    No monitored applications found. Click &quot;Refresh&quot; to scan for installed apps.
+                  </p>
+                </div>
+              ) : (
+                <div
+                  className={`max-h-80 overflow-y-auto ${
+                    viewMode === 'grid' ? 'grid grid-cols-2 md:grid-cols-3 gap-3' : 'space-y-2'
+                  }`}
+                >
+                  {availableApps.map((app) => (
+                    <div
+                      key={app.id}
+                      className={`relative flex items-start p-3 rounded border border-bright-gray-200 dark:border-bright-gray-700 hover:bg-bright-gray-50 dark:hover:bg-bright-gray-700 transition-colors ${
+                        viewMode === 'grid' ? 'flex-col' : ''
+                      }`}
+                    >
+                      <div className="flex h-6 items-center">
+                        <input
+                          type="checkbox"
+                          id={`app-${app.id}`}
+                          checked={(localSettings.excludedApps || []).includes(app.id)}
+                          onChange={() => handleExcludedAppToggle(app.id)}
+                          className="form-checkbox"
+                        />
+                      </div>
+                      <div className={`text-sm leading-6 ${viewMode === 'grid' ? 'mt-2' : 'ml-3'}`}>
+                        <label htmlFor={`app-${app.id}`} className="font-medium text-primary cursor-pointer">
+                          {app.name}
+                        </label>
+                        <p className="text-xs text-secondary capitalize mt-1">
+                          {app.category === 'communication' && 'Pauses during calls'}
+                          {app.category === 'media' && 'Pauses during fullscreen playback'}
+                          {app.category === 'browser' && 'Pauses during fullscreen videos'}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

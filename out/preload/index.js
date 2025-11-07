@@ -30,6 +30,10 @@ const api = {
   getAvailableLogos: () => electron.ipcRenderer.invoke("logo:getAvailable"),
   uploadLogo: () => electron.ipcRenderer.invoke("logo:upload"),
   resolveLogoPath: (path) => electron.ipcRenderer.invoke("logo:resolvePath", path),
+  // App monitoring
+  getAvailableApps: () => electron.ipcRenderer.invoke("apps:getAvailable"),
+  scanInstalledApps: () => electron.ipcRenderer.invoke("apps:scan"),
+  getAppStates: () => electron.ipcRenderer.invoke("apps:getStates"),
   // Event listeners
   onCycleUpdate: (callback) => {
     electron.ipcRenderer.on("cycle:update", (_event, payload) => callback(payload));
