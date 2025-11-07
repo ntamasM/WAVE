@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import type { CycleStatus } from '../../types/cycle.types';
 import type { AppState } from '../../types/app-monitor.types';
+import { showError, showInfo, showSuccess } from '../lib/toast';
 
 interface CycleContextType {
   status: CycleStatus | null;
@@ -23,33 +24,9 @@ export const CycleProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [isAnyAppInCall, setIsAnyAppInCall] = useState<boolean>(false);
   const [isAnyAppFullscreen, setIsAnyAppFullscreen] = useState<boolean>(false);
 
-  // Derived state for quick checks and auto pause/resume
-  useEffect(() => {
-    const anyInCall = appStates.some((app) => app.isInCall);
-    const anyFullscreen = appStates.some((app) => app.isFullscreen);
-
-    setIsAnyAppInCall(anyInCall);
-    setIsAnyAppFullscreen(anyFullscreen);
-
-    // Auto pause/resume based on app states
-    const shouldPause = anyInCall || anyFullscreen;
-
-    if (status) {
-      if (shouldPause && status.phase !== 'paused') {
-        // Pause the cycle
-        console.log('[CycleContext] Auto-pausing cycle due to app activity');
-        window.waveAPI.pauseCycle().catch((error) => {
-          console.error('[CycleContext] Failed to auto-pause:', error);
-        });
-      } else if (!shouldPause && status.phase === 'paused') {
-        // Resume the cycle
-        console.log('[CycleContext] Auto-resuming cycle - no active apps detected');
-        window.waveAPI.resumeCycle().catch((error) => {
-          console.error('[CycleContext] Failed to auto-resume:', error);
-        });
-      }
-    }
-  }, [appStates, status]);
+  // Track if pause was triggered by app monitoring
+  const appMonitorPausedRef = useRef<boolean>(false);
+  const previousShouldPauseRef = useRef<boolean>(false);
 
   // Function to refresh status from main process
   const refreshStatus = useCallback(async () => {
@@ -73,7 +50,68 @@ export const CycleProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, []);
 
-  // Initialize and set up listeners
+  // Handle pause/resume with proper error handling
+  const handleAutoPause = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      await window.waveAPI.pauseCycle();
+      showInfo('Cycle paused - App in call or fullscreen');
+      appMonitorPausedRef.current = true;
+      await refreshStatus();
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      showError(`Failed to auto-pause: ${errorMsg}`);
+      appMonitorPausedRef.current = false;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [refreshStatus]);
+
+  const handleAutoResume = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      await window.waveAPI.resumeCycle();
+      showSuccess('Cycle resumed - No active apps detected');
+      appMonitorPausedRef.current = false;
+      await refreshStatus();
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      showError(`Failed to auto-resume: ${errorMsg}`);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [refreshStatus]);
+
+  // Derived state for quick checks and auto pause/resume
+  useEffect(() => {
+    const anyInCall = appStates.some((app) => app.isInCall);
+    const anyFullscreen = appStates.some((app) => app.isFullscreen);
+
+    setIsAnyAppInCall(anyInCall);
+    setIsAnyAppFullscreen(anyFullscreen);
+
+    const shouldPause = anyInCall || anyFullscreen;
+    const previousShouldPause = previousShouldPauseRef.current;
+
+    console.log(
+      `[CycleContext] App states changed. Any in call: ${anyInCall}, Any fullscreen: ${anyFullscreen}, Should pause: ${shouldPause}`
+    );
+
+    // Only act if shouldPause state changed
+    if (shouldPause !== previousShouldPause && status) {
+      if (shouldPause && status.phase !== 'paused') {
+        // Apps became active - pause the cycle
+        console.log('[CycleContext] Auto-pausing cycle due to app activity');
+        handleAutoPause();
+      } else if (!shouldPause && status.phase === 'paused' && appMonitorPausedRef.current) {
+        // Apps became inactive AND we paused it - resume the cycle
+        console.log('[CycleContext] Auto-resuming cycle - no active apps detected');
+        handleAutoResume();
+      }
+    }
+
+    previousShouldPauseRef.current = shouldPause;
+  }, [appStates, status, handleAutoPause, handleAutoResume]); // Initialize and set up listeners
   useEffect(() => {
     let isMounted = true;
 
