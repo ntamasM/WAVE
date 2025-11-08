@@ -9599,7 +9599,12 @@ const DEFAULT_SETTINGS = {
   enableLogging: false,
   theme: "light",
   customization: DEFAULT_CUSTOMIZATION,
-  excludedApps: []
+  excludedApps: [],
+  excludedAppsViewMode: "list",
+  lastAppScan: 0,
+  appScanInterval: 30,
+  // Default to 30 days
+  installedApps: []
 };
 class SettingsStore {
   store;
@@ -9645,6 +9650,25 @@ class SettingsStore {
             type: "string"
           },
           default: DEFAULT_SETTINGS.excludedApps || []
+        },
+        excludedAppsViewMode: {
+          type: "string",
+          enum: ["list", "grid"],
+          default: DEFAULT_SETTINGS.excludedAppsViewMode || "list"
+        },
+        lastAppScan: {
+          type: "number",
+          default: DEFAULT_SETTINGS.lastAppScan || 0
+        },
+        appScanInterval: {
+          type: "number",
+          default: DEFAULT_SETTINGS.appScanInterval || 30,
+          minimum: 0,
+          maximum: 30
+        },
+        installedApps: {
+          type: "array",
+          default: DEFAULT_SETTINGS.installedApps || []
         }
       },
       defaults: DEFAULT_SETTINGS,
@@ -9660,7 +9684,11 @@ class SettingsStore {
       enableLogging: this.store.get("enableLogging"),
       theme: this.store.get("theme") || "light",
       customization: this.store.get("customization") || DEFAULT_SETTINGS.customization,
-      excludedApps: this.store.get("excludedApps", DEFAULT_SETTINGS.excludedApps || [])
+      excludedApps: this.store.get("excludedApps", DEFAULT_SETTINGS.excludedApps || []),
+      excludedAppsViewMode: this.store.get("excludedAppsViewMode", DEFAULT_SETTINGS.excludedAppsViewMode || "list"),
+      lastAppScan: this.store.get("lastAppScan", DEFAULT_SETTINGS.lastAppScan || 0),
+      appScanInterval: this.store.get("appScanInterval", DEFAULT_SETTINGS.appScanInterval || 30),
+      installedApps: this.store.get("installedApps", DEFAULT_SETTINGS.installedApps || [])
     };
   }
   setSettings(settings) {
@@ -9900,14 +9928,16 @@ class CycleManager {
       return;
     }
     const now = Date.now();
-    const pausedDuration = now - (this.state.pausedAt || now);
-    const previousRemaining = this.state.pausedRemaining - pausedDuration;
+    const remainingMs = this.state.pausedRemaining;
+    const workDurationMs = this.settings.workHours * 3600 * 1e3;
+    const elapsedMs = workDurationMs - remainingMs;
     this.state.phase = "work";
-    this.state.workStartedAt = now - (this.settings.workHours * 3600 * 1e3 - previousRemaining);
+    this.state.workStartedAt = now - elapsedMs;
     this.state.breakStartedAt = null;
     this.state.pausedAt = null;
+    this.state.pausedRemaining = 0;
     this.emit("cycle:phase-changed", "work");
-    logger$4.info("Cycle resumed");
+    logger$4.info(`Cycle resumed with ${remainingMs}ms remaining`);
   }
   async lockNow() {
     logger$4.info("Lock requested immediately");
@@ -10342,6 +10372,7 @@ class AppMonitor {
   checkIntervalMs = 5e3;
   // Check every 5 seconds for active state
   onStateChangeCallback = null;
+  onScanCompleteCallback = null;
   constructor() {
     MONITORED_APPS.forEach((app2) => {
       this.currentStates.set(app2.id, {
@@ -10383,6 +10414,12 @@ class AppMonitor {
     this.onStateChangeCallback = callback;
   }
   /**
+   * Set callback for when app scan is complete
+   */
+  onScanComplete(callback) {
+    this.onScanCompleteCallback = callback;
+  }
+  /**
    * Get current state of all monitored apps
    */
   getStates() {
@@ -10404,7 +10441,22 @@ class AppMonitor {
     }
     this.installedApps = installed;
     logger$3.info(`Scan complete. Found ${installed.length} installed apps`);
+    if (this.onScanCompleteCallback) {
+      this.onScanCompleteCallback(installed);
+    }
     return installed;
+  }
+  /**
+   * Load installed apps from cached data without scanning
+   */
+  loadInstalledApps(apps) {
+    this.installedApps = apps.map((app2) => ({
+      id: app2.id,
+      name: app2.name,
+      processNames: app2.processNames,
+      category: app2.category
+    }));
+    logger$3.info(`Loaded ${this.installedApps.length} apps from cache`);
   }
   /**
    * Get list of installed apps (cached)
@@ -10876,7 +10928,15 @@ function handleIPC(settingsStore2, cycleManager2, appMonitor2) {
       return [];
     }
     try {
-      const apps = appMonitor2.getInstalledApps();
+      let apps = appMonitor2.getInstalledApps();
+      if (apps.length === 0) {
+        const settings = settingsStore2.getSettings();
+        if (settings.installedApps && settings.installedApps.length > 0) {
+          logger$1.info("Loading apps from settings cache");
+          appMonitor2.loadInstalledApps(settings.installedApps);
+          apps = appMonitor2.getInstalledApps();
+        }
+      }
       return apps.map((app2) => ({ id: app2.id, name: app2.name, category: app2.category }));
     } catch (error2) {
       const errorMsg = error2 instanceof Error ? error2.message : "Unknown error";
@@ -10892,6 +10952,15 @@ function handleIPC(settingsStore2, cycleManager2, appMonitor2) {
     try {
       logger$1.info("Scanning for installed apps via IPC");
       const apps = await appMonitor2.scanInstalledApps();
+      const appsData = apps.map((app2) => ({
+        id: app2.id,
+        name: app2.name,
+        category: app2.category,
+        processNames: app2.processNames
+      }));
+      settingsStore2.setSetting("installedApps", appsData);
+      settingsStore2.setSetting("lastAppScan", Date.now());
+      logger$1.info(`Saved ${apps.length} installed apps to settings via IPC`);
       return apps.map((app2) => ({ id: app2.id, name: app2.name, category: app2.category }));
     } catch (error2) {
       const errorMsg = error2 instanceof Error ? error2.message : "Unknown error";
@@ -10957,7 +11026,7 @@ const createWindow = () => {
   mainWindow = new require$$1.BrowserWindow({
     width: 1500,
     height: 700,
-    minWidth: 600,
+    minWidth: 700,
     minHeight: 500,
     show: false,
     // Don't show until ready-to-show event
@@ -11119,8 +11188,35 @@ const initializeCycleManager = async () => {
   }
   if (!appMonitor) {
     appMonitor = new AppMonitor();
-    logger.info("Scanning for installed applications...");
-    await appMonitor.scanInstalledApps();
+    appMonitor.onScanComplete((apps) => {
+      const appsData = apps.map((app2) => ({
+        id: app2.id,
+        name: app2.name,
+        category: app2.category,
+        processNames: app2.processNames
+      }));
+      settingsStore.setSetting("installedApps", appsData);
+      settingsStore.setSetting("lastAppScan", Date.now());
+      logger.info(`Saved ${apps.length} installed apps to settings`);
+    });
+    const settings2 = settingsStore.getSettings();
+    const now = Date.now();
+    const lastScan = settings2.lastAppScan || 0;
+    const scanInterval = settings2.appScanInterval || 30;
+    const daysSinceLastScan = (now - lastScan) / (1e3 * 60 * 60 * 24);
+    const shouldScan = scanInterval === 0 ? false : lastScan === 0 || daysSinceLastScan >= scanInterval;
+    if (shouldScan) {
+      logger.info(`Scanning for installed applications (last scan: ${daysSinceLastScan.toFixed(1)} days ago)...`);
+      await appMonitor.scanInstalledApps();
+    } else if (settings2.installedApps && settings2.installedApps.length > 0) {
+      logger.info(
+        `Loading ${settings2.installedApps.length} apps from cache (scanned ${daysSinceLastScan.toFixed(1)} days ago)`
+      );
+      appMonitor.loadInstalledApps(settings2.installedApps);
+    } else {
+      logger.info("No cached app data found, performing initial scan...");
+      await appMonitor.scanInstalledApps();
+    }
     appMonitor.start();
     logger.info("App monitor initialized and started");
   }

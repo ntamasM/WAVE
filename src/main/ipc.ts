@@ -252,7 +252,19 @@ export function handleIPC(settingsStore: SettingsStore, cycleManager: CycleManag
       return [];
     }
     try {
-      const apps = appMonitor.getInstalledApps();
+      // First try to get from app monitor's cache
+      let apps = appMonitor.getInstalledApps();
+
+      // If no apps in memory, try to load from settings
+      if (apps.length === 0) {
+        const settings = settingsStore.getSettings();
+        if (settings.installedApps && settings.installedApps.length > 0) {
+          logger.info('Loading apps from settings cache');
+          appMonitor.loadInstalledApps(settings.installedApps);
+          apps = appMonitor.getInstalledApps();
+        }
+      }
+
       return apps.map((app) => ({ id: app.id, name: app.name, category: app.category }));
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';
@@ -269,6 +281,18 @@ export function handleIPC(settingsStore: SettingsStore, cycleManager: CycleManag
     try {
       logger.info('Scanning for installed apps via IPC');
       const apps = await appMonitor.scanInstalledApps();
+
+      // Save to settings (also happens via callback, but doing it here ensures it's immediate)
+      const appsData = apps.map((app) => ({
+        id: app.id,
+        name: app.name,
+        category: app.category,
+        processNames: app.processNames,
+      }));
+      settingsStore.setSetting('installedApps', appsData);
+      settingsStore.setSetting('lastAppScan', Date.now());
+      logger.info(`Saved ${apps.length} installed apps to settings via IPC`);
+
       return apps.map((app) => ({ id: app.id, name: app.name, category: app.category }));
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';

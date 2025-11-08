@@ -284,6 +284,7 @@ export class AppMonitor {
   private installedApps: MonitoredApp[] = [];
   private checkIntervalMs = 5000; // Check every 5 seconds for active state
   private onStateChangeCallback: ((states: AppState[]) => void) | null = null;
+  private onScanCompleteCallback: ((apps: MonitoredApp[]) => void) | null = null;
 
   constructor() {
     MONITORED_APPS.forEach((app) => {
@@ -331,6 +332,13 @@ export class AppMonitor {
   }
 
   /**
+   * Set callback for when app scan is complete
+   */
+  onScanComplete(callback: (apps: MonitoredApp[]) => void): void {
+    this.onScanCompleteCallback = callback;
+  }
+
+  /**
    * Get current state of all monitored apps
    */
   getStates(): AppState[] {
@@ -355,7 +363,26 @@ export class AppMonitor {
 
     this.installedApps = installed;
     logger.info(`Scan complete. Found ${installed.length} installed apps`);
+
+    // Notify callback if set
+    if (this.onScanCompleteCallback) {
+      this.onScanCompleteCallback(installed);
+    }
+
     return installed;
+  }
+
+  /**
+   * Load installed apps from cached data without scanning
+   */
+  loadInstalledApps(apps: Array<{ id: string; name: string; category: string; processNames: string[] }>): void {
+    this.installedApps = apps.map((app) => ({
+      id: app.id,
+      name: app.name,
+      processNames: app.processNames,
+      category: app.category as 'communication' | 'media' | 'browser',
+    }));
+    logger.info(`Loaded ${this.installedApps.length} apps from cache`);
   }
 
   /**
