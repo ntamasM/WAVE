@@ -47,6 +47,25 @@ export class SettingsStore {
           },
           default: DEFAULT_SETTINGS.excludedApps || [],
         },
+        excludedAppsViewMode: {
+          type: 'string',
+          enum: ['list', 'grid'],
+          default: DEFAULT_SETTINGS.excludedAppsViewMode || 'list',
+        },
+        lastAppScan: {
+          type: 'number',
+          default: DEFAULT_SETTINGS.lastAppScan || 0,
+        },
+        appScanInterval: {
+          type: 'number',
+          default: DEFAULT_SETTINGS.appScanInterval || 30,
+          minimum: 0,
+          maximum: 30,
+        },
+        installedApps: {
+          type: 'array',
+          default: DEFAULT_SETTINGS.installedApps || [],
+        },
       },
       defaults: DEFAULT_SETTINGS,
       name: 'wave-settings',
@@ -63,6 +82,17 @@ export class SettingsStore {
       theme: (this.store.get('theme') as 'light' | 'dark') || 'light',
       customization: this.store.get('customization') || DEFAULT_SETTINGS.customization,
       excludedApps: this.store.get('excludedApps', DEFAULT_SETTINGS.excludedApps || []) as string[],
+      excludedAppsViewMode: this.store.get('excludedAppsViewMode', DEFAULT_SETTINGS.excludedAppsViewMode || 'list') as
+        | 'list'
+        | 'grid',
+      lastAppScan: this.store.get('lastAppScan', DEFAULT_SETTINGS.lastAppScan || 0) as number,
+      appScanInterval: this.store.get('appScanInterval', DEFAULT_SETTINGS.appScanInterval || 30) as number,
+      installedApps: this.store.get('installedApps', DEFAULT_SETTINGS.installedApps || []) as Array<{
+        id: string;
+        name: string;
+        category: string;
+        processNames: string[];
+      }>,
     };
   }
 

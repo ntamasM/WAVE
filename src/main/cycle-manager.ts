@@ -81,20 +81,22 @@ export class CycleManager {
       return;
     }
 
-    // Restore the previous phase's timer
+    // Restore the work phase with the remaining time
     const now = Date.now();
-    const pausedDuration = now - (this.state.pausedAt || now);
-    const previousRemaining = this.state.pausedRemaining - pausedDuration;
+    const remainingMs = this.state.pausedRemaining;
 
-    // Determine what phase we were in before pausing
-    // For simplicity, assume we were in 'work' (could enhance to track this)
+    // Calculate when work should have started to have this much time remaining
+    const workDurationMs = this.settings.workHours * 3600 * 1000;
+    const elapsedMs = workDurationMs - remainingMs;
+
     this.state.phase = 'work';
-    this.state.workStartedAt = now - (this.settings.workHours * 3600 * 1000 - previousRemaining);
+    this.state.workStartedAt = now - elapsedMs;
     this.state.breakStartedAt = null;
     this.state.pausedAt = null;
+    this.state.pausedRemaining = 0;
 
     this.emit('cycle:phase-changed', 'work');
-    logger.info('Cycle resumed');
+    logger.info(`Cycle resumed with ${remainingMs}ms remaining`);
   }
 
   async lockNow(): Promise<void> {

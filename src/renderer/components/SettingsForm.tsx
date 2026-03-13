@@ -20,13 +20,14 @@ import {
 } from 'react-icons/fa';
 import { showSuccess, showError, showInfo } from '../lib/toast';
 import { NumberInput } from './NumberInput';
+import { Checkbox } from './Checkbox';
 
 export const SettingsForm: React.FC = () => {
   const { settings } = useSettings();
   const [localSettings, setLocalSettings] = useState(settings);
   const [availableApps, setAvailableApps] = useState<Array<{ id: string; name: string; category: string }>>([]);
   const [loadingApps, setLoadingApps] = useState(true);
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>(settings.excludedAppsViewMode || 'list');
 
   // Separate state for hours and minutes
   const [workHours, setWorkHours] = useState(Math.floor(settings.workHours));
@@ -37,6 +38,7 @@ export const SettingsForm: React.FC = () => {
     setLocalSettings(settings);
     setWorkHours(Math.floor(settings.workHours));
     setWorkMinutes(Math.round((settings.workHours % 1) * 60));
+    setViewMode(settings.excludedAppsViewMode || 'list');
   }, [settings]);
 
   // Load available apps on mount
@@ -62,6 +64,11 @@ export const SettingsForm: React.FC = () => {
       ...localSettings,
       [field]: value,
     });
+  };
+
+  const handleViewModeChange = (mode: 'list' | 'grid') => {
+    setViewMode(mode);
+    handleChange('excludedAppsViewMode', mode);
   };
 
   const handleExcludedAppToggle = (appId: string) => {
@@ -286,23 +293,13 @@ export const SettingsForm: React.FC = () => {
           </div>
           <div className="section-body space-y-4">
             {/* Show Skip Button */}
-            <div className="relative flex items-start">
-              <div className="flex h-6 items-center">
-                <input
-                  type="checkbox"
-                  id="showSkipButton"
-                  checked={localSettings.showSkipButton}
-                  onChange={(e) => handleChange('showSkipButton', e.target.checked)}
-                  className="form-checkbox"
-                />
-              </div>
-              <div className="ml-3 text-sm leading-6">
-                <label htmlFor="showSkipButton" className="form-label cursor-pointer">
-                  Show skip button
-                </label>
-                <p className="text-secondary">Display a skip button during breaks to allow ending the break early</p>
-              </div>
-            </div>
+            <Checkbox
+              id="showSkipButton"
+              checked={localSettings.showSkipButton}
+              onChange={(checked) => handleChange('showSkipButton', checked)}
+              label="Show skip button"
+              description="Display a skip button during breaks to allow ending the break early"
+            />
 
             {/* Excluded Applications */}
             <div className="pt-4 border-t border-bright-gray-200 dark:border-bright-gray-700">
@@ -323,7 +320,7 @@ export const SettingsForm: React.FC = () => {
                     <div className="flex bg-bright-gray-100 dark:bg-bright-gray-800 rounded-lg p-1">
                       <button
                         type="button"
-                        onClick={() => setViewMode('list')}
+                        onClick={() => handleViewModeChange('list')}
                         className={`p-2 rounded transition-colors ${
                           viewMode === 'list'
                             ? 'bg-white dark:bg-bright-gray-700 text-vista-blue-600 dark:text-vista-blue-400 shadow-sm'
@@ -335,7 +332,7 @@ export const SettingsForm: React.FC = () => {
                       </button>
                       <button
                         type="button"
-                        onClick={() => setViewMode('grid')}
+                        onClick={() => handleViewModeChange('grid')}
                         className={`p-2 rounded transition-colors ${
                           viewMode === 'grid'
                             ? 'bg-white dark:bg-bright-gray-700 text-vista-blue-600 dark:text-vista-blue-400 shadow-sm'
@@ -352,7 +349,7 @@ export const SettingsForm: React.FC = () => {
                       type="button"
                       onClick={handleSelectAll}
                       disabled={loadingApps || availableApps.length === 0}
-                      className="btn-secondary flex items-center gap-2"
+                      className="btn-secondary flex items-center gap-2 whitespace-nowrap"
                       title={
                         availableApps.length > 0 &&
                         availableApps.every((app) => (localSettings.excludedApps || []).includes(app.id))
@@ -389,6 +386,39 @@ export const SettingsForm: React.FC = () => {
                 </div>
               </div>
 
+              {/* App Scan Interval Setting */}
+              <div className="mb-4 p-4 bg-bright-gray-50 dark:bg-bright-gray-800 rounded-lg border border-bright-gray-200 dark:border-bright-gray-700">
+                <label htmlFor="appScanInterval" className="form-label mb-2">
+                  Automatic App Scan Interval
+                </label>
+                <div className="flex items-center gap-4">
+                  <select
+                    id="appScanInterval"
+                    value={localSettings.appScanInterval ?? 30}
+                    onChange={(e) => handleChange('appScanInterval', parseInt(e.target.value))}
+                    className="px-3 py-2 rounded-lg border border-bright-gray-300 dark:border-bright-gray-600 bg-white dark:bg-bright-gray-700 text-bright-gray-900 dark:text-bright-gray-100 focus:ring-2 focus:ring-vista-blue-500 focus:border-transparent"
+                  >
+                    <option value="0">Disabled (Manual only)</option>
+                    <option value="10">Every 10 days</option>
+                    <option value="15">Every 15 days</option>
+                    <option value="20">Every 20 days</option>
+                    <option value="25">Every 25 days</option>
+                    <option value="30">Every 30 days</option>
+                  </select>
+                  <p className="text-sm text-secondary flex-1">
+                    {localSettings.appScanInterval === 0
+                      ? 'Automatic scanning is disabled. Apps will only be scanned when you click the Refresh button.'
+                      : `WAVE will automatically scan for new applications every ${localSettings.appScanInterval} days.`}
+                  </p>
+                </div>
+                {localSettings.lastAppScan && localSettings.lastAppScan > 0 && (
+                  <p className="mt-2 text-xs text-bright-gray-500 dark:text-bright-gray-500">
+                    Last scanned: {new Date(localSettings.lastAppScan).toLocaleDateString()} at{' '}
+                    {new Date(localSettings.lastAppScan).toLocaleTimeString()}
+                  </p>
+                )}
+              </div>
+
               {loadingApps ? (
                 <div className="text-center py-4">
                   <p className="text-secondary">Scanning for installed applications...</p>
@@ -401,36 +431,33 @@ export const SettingsForm: React.FC = () => {
                 </div>
               ) : (
                 <div
-                  className={`max-h-80 overflow-y-auto ${
+                  className={`max-h-80 overflow-y-auto p-5 rounded border border-bright-gray-200 dark:border-bright-gray-700 ${
                     viewMode === 'grid' ? 'grid grid-cols-2 md:grid-cols-3 gap-3' : 'space-y-2'
                   }`}
                 >
                   {availableApps.map((app) => (
                     <div
                       key={app.id}
-                      className={`relative flex items-start p-3 rounded border border-bright-gray-200 dark:border-bright-gray-700 hover:bg-bright-gray-50 dark:hover:bg-bright-gray-700 transition-colors ${
-                        viewMode === 'grid' ? 'flex-col' : ''
+                      className={`p-3 rounded border border-bright-gray-200 dark:border-bright-gray-700 hover:bg-bright-gray-50 dark:hover:bg-bright-gray-700 transition-colors ${
+                        viewMode === 'grid' ? '' : ''
                       }`}
                     >
-                      <div className="flex h-6 items-center">
-                        <input
-                          type="checkbox"
-                          id={`app-${app.id}`}
-                          checked={(localSettings.excludedApps || []).includes(app.id)}
-                          onChange={() => handleExcludedAppToggle(app.id)}
-                          className="form-checkbox"
-                        />
-                      </div>
-                      <div className={`text-sm leading-6 ${viewMode === 'grid' ? 'mt-2' : 'ml-3'}`}>
-                        <label htmlFor={`app-${app.id}`} className="font-medium text-primary cursor-pointer">
-                          {app.name}
-                        </label>
-                        <p className="text-xs text-secondary capitalize mt-1">
-                          {app.category === 'communication' && 'Pauses during calls'}
-                          {app.category === 'media' && 'Pauses during fullscreen playback'}
-                          {app.category === 'browser' && 'Pauses during fullscreen videos'}
-                        </p>
-                      </div>
+                      <Checkbox
+                        id={`app-${app.id}`}
+                        checked={(localSettings.excludedApps || []).includes(app.id)}
+                        onChange={() => handleExcludedAppToggle(app.id)}
+                        label={app.name}
+                        description={
+                          app.category === 'communication'
+                            ? 'Pauses during calls'
+                            : app.category === 'media'
+                              ? 'Pauses during fullscreen playback'
+                              : app.category === 'browser'
+                                ? 'Pauses during fullscreen videos'
+                                : ''
+                        }
+                        // className={viewMode === 'grid' ? 'flex-col' : ''}
+                      />
                     </div>
                   ))}
                 </div>
@@ -450,42 +477,22 @@ export const SettingsForm: React.FC = () => {
           </div>
           <div className="section-body space-y-4">
             {/* Start with Windows */}
-            <div className="relative flex items-start">
-              <div className="flex h-6 items-center">
-                <input
-                  type="checkbox"
-                  id="startWithWindows"
-                  checked={localSettings.startWithWindows}
-                  onChange={(e) => handleChange('startWithWindows', e.target.checked)}
-                  className="form-checkbox"
-                />
-              </div>
-              <div className="ml-3 text-sm leading-6">
-                <label htmlFor="startWithWindows" className="form-label cursor-pointer">
-                  Launch on Windows startup
-                </label>
-                <p className="text-secondary">Automatically start WAVE when Windows boots up</p>
-              </div>
-            </div>
+            <Checkbox
+              id="startWithWindows"
+              checked={localSettings.startWithWindows}
+              onChange={(checked) => handleChange('startWithWindows', checked)}
+              label="Launch on Windows startup"
+              description="Automatically start WAVE when Windows boots up"
+            />
 
             {/* Enable Logging */}
-            <div className="relative flex items-start">
-              <div className="flex h-6 items-center">
-                <input
-                  type="checkbox"
-                  id="enableLogging"
-                  checked={localSettings.enableLogging}
-                  onChange={(e) => handleChange('enableLogging', e.target.checked)}
-                  className="form-checkbox"
-                />
-              </div>
-              <div className="ml-3 text-sm leading-6">
-                <label htmlFor="enableLogging" className="form-label cursor-pointer">
-                  Enable diagnostic logging
-                </label>
-                <p className="text-secondary">Save logs for troubleshooting (7-day retention)</p>
-              </div>
-            </div>
+            <Checkbox
+              id="enableLogging"
+              checked={localSettings.enableLogging}
+              onChange={(checked) => handleChange('enableLogging', checked)}
+              label="Enable diagnostic logging"
+              description="Save logs for troubleshooting (7-day retention)"
+            />
 
             {/* Open Logs Folder Button */}
             <div className="pt-2">
@@ -518,6 +525,7 @@ export const SettingsForm: React.FC = () => {
             setLocalSettings(settings);
             setWorkHours(Math.floor(settings.workHours));
             setWorkMinutes(Math.round((settings.workHours % 1) * 60));
+            setViewMode(settings.excludedAppsViewMode || 'list');
             showInfo('Settings reset to saved values');
           }}
           className="btn-secondary"

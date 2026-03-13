@@ -31,6 +31,10 @@ export interface Settings {
   theme?: 'light' | 'dark';
   customization?: CustomizationSettings;
   excludedApps?: string[]; // Array of app IDs to monitor and pause cycle for
+  excludedAppsViewMode?: 'list' | 'grid'; // View mode preference for excluded apps list
+  lastAppScan?: number; // Timestamp of last app scan (milliseconds since epoch)
+  appScanInterval?: number; // Days between scans (10-30) or 0 for disabled (manual only)
+  installedApps?: Array<{ id: string; name: string; category: string; processNames: string[] }>; // Cached installed apps data
 }
 
 export const DEFAULT_CUSTOMIZATION: CustomizationSettings = {
@@ -66,4 +70,8 @@ export const DEFAULT_SETTINGS: Settings = {
   theme: 'light',
   customization: DEFAULT_CUSTOMIZATION,
   excludedApps: [],
+  excludedAppsViewMode: 'list',
+  lastAppScan: 0,
+  appScanInterval: 30, // Default to 30 days
+  installedApps: [],
 };

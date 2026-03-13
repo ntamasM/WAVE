@@ -60,7 +60,7 @@ const createWindow = (): void => {
   mainWindow = new BrowserWindow({
     width: 1500,
     height: 700,
-    minWidth: 600,
+    minWidth: 700,
     minHeight: 500,
     show: false, // Don't show until ready-to-show event
     webPreferences: {
@@ -250,9 +250,43 @@ const initializeCycleManager = async (): Promise<void> => {
   // Initialize app monitor if not already initialized
   if (!appMonitor) {
     appMonitor = new AppMonitor();
-    // Scan for installed apps on first run
-    logger.info('Scanning for installed applications...');
-    await appMonitor.scanInstalledApps();
+
+    // Set callback to save installed apps when scan completes
+    appMonitor.onScanComplete((apps) => {
+      const appsData = apps.map((app) => ({
+        id: app.id,
+        name: app.name,
+        category: app.category,
+        processNames: app.processNames,
+      }));
+      settingsStore.setSetting('installedApps', appsData);
+      settingsStore.setSetting('lastAppScan', Date.now());
+      logger.info(`Saved ${apps.length} installed apps to settings`);
+    });
+
+    const settings = settingsStore.getSettings();
+    const now = Date.now();
+    const lastScan = settings.lastAppScan || 0;
+    const scanInterval = settings.appScanInterval || 30; // Days
+    const daysSinceLastScan = (now - lastScan) / (1000 * 60 * 60 * 24);
+
+    // Determine if we need to scan
+    const shouldScan = scanInterval === 0 ? false : lastScan === 0 || daysSinceLastScan >= scanInterval;
+
+    if (shouldScan) {
+      logger.info(`Scanning for installed applications (last scan: ${daysSinceLastScan.toFixed(1)} days ago)...`);
+      await appMonitor.scanInstalledApps();
+    } else if (settings.installedApps && settings.installedApps.length > 0) {
+      logger.info(
+        `Loading ${settings.installedApps.length} apps from cache (scanned ${daysSinceLastScan.toFixed(1)} days ago)`
+      );
+      appMonitor.loadInstalledApps(settings.installedApps);
+    } else {
+      // No cached data and scan disabled or not yet needed - do initial scan anyway
+      logger.info('No cached app data found, performing initial scan...');
+      await appMonitor.scanInstalledApps();
+    }
+
     appMonitor.start();
     logger.info('App monitor initialized and started');
   }
