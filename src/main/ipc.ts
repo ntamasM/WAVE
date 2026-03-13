@@ -5,13 +5,19 @@ import { validateSettingsInput } from '../shared/ipc';
 import { getAutoStart, setAutoStart } from './autostart';
 import { Logger } from './logger';
 import { AppMonitor } from './app-monitor';
+import { StandUpTimer } from './standup-timer';
 import path from 'path';
 import fs from 'fs/promises';
 import { existsSync } from 'fs';
 
 const logger = new Logger('ipc');
 
-export function handleIPC(settingsStore: SettingsStore, cycleManager: CycleManager, appMonitor?: AppMonitor): void {
+export function handleIPC(
+  settingsStore: SettingsStore,
+  cycleManager: CycleManager,
+  appMonitor?: AppMonitor,
+  standUpTimer?: StandUpTimer
+): void {
   /**
    * Settings endpoints
    */
@@ -31,6 +37,19 @@ export function handleIPC(settingsStore: SettingsStore, cycleManager: CycleManag
     // If autostart setting changed, update it
     if (partialSettings.startWithWindows !== undefined) {
       setAutoStart(partialSettings.startWithWindows);
+    }
+
+    // If stand up timer settings changed, update the timer
+    if (
+      partialSettings.standUpEnabled !== undefined ||
+      partialSettings.standUpInterval !== undefined ||
+      partialSettings.standUpPosition !== undefined
+    ) {
+      standUpTimer?.updateSettings(
+        updated.standUpEnabled ?? false,
+        updated.standUpInterval ?? 30,
+        updated.standUpPosition ?? 'center-center'
+      );
     }
 
     logger.info('Settings updated via IPC');
@@ -74,6 +93,22 @@ export function handleIPC(settingsStore: SettingsStore, cycleManager: CycleManag
   ipcMain.on('lock:skip', () => {
     cycleManager.skipLock();
     logger.info('Lock skipped via IPC');
+  });
+
+  /**
+   * Stand up window endpoints
+   */
+  ipcMain.on('standup:dismiss', () => {
+    standUpTimer?.window.close();
+    logger.info('Stand up window dismissed via IPC');
+  });
+
+  /**
+   * Pre-lock warning endpoints
+   */
+  ipcMain.on('prelock:dismiss', () => {
+    cycleManager.closePreLockWarning();
+    logger.info('Pre-lock warning dismissed via IPC');
   });
 
   /**

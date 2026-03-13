@@ -71,6 +71,10 @@ const api = {
   onLockUpdate: (callback: (data: { remainingMs: number }) => void) => {
     ipcRenderer.on('lock:update', (_event, data) => callback(data));
   },
+  // Stand up reminder
+  dismissStandUp: () => ipcRenderer.send('standup:dismiss'),
+  // Pre-lock warning
+  dismissPreLock: () => ipcRenderer.send('prelock:dismiss'),
   removeAllListeners: (channel: string) => {
     ipcRenderer.removeAllListeners(channel);
   },

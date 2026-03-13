@@ -6,6 +6,7 @@ import { SettingsStore } from './settings-store';
 import { CycleManager } from './cycle-manager';
 import { AppMonitor } from './app-monitor';
 import { handleIPC } from './ipc';
+import { StandUpTimer } from './standup-timer';
 import { setAutoStart, getAutoStart } from './autostart';
 import { getAppAssetPath, getMediaPath } from './resources';
 import fs from 'fs/promises';
@@ -18,6 +19,7 @@ let tray: Tray | null = null;
 const settingsStore = new SettingsStore();
 let cycleManager: CycleManager | null = null;
 let appMonitor: AppMonitor | null = null;
+let standUpTimer: StandUpTimer | null = null;
 let isQuitting = false;
 
 const createSplashWindow = (): void => {
@@ -416,8 +418,11 @@ app.on('ready', async () => {
   // Initialize cycle manager FIRST (now async) - this takes time to scan apps
   await initializeCycleManager();
 
+  // Create stand up timer early so the IPC handler captures the same instance
+  standUpTimer = new StandUpTimer();
+
   // Setup IPC handlers BEFORE creating window
-  handleIPC(settingsStore, cycleManager!, appMonitor!);
+  handleIPC(settingsStore, cycleManager!, appMonitor!, standUpTimer);
 
   // Close splash window and show main window
   closeSplashWindow();
@@ -425,6 +430,14 @@ app.on('ready', async () => {
   // NOW create window and tray after IPC handlers are ready
   createWindow();
   createTray();
+
+  // Set the window reference now that the window exists, then start the timer
+  const standUpSettings = settingsStore.getSettings();
+  standUpTimer.updateSettings(
+    standUpSettings.standUpEnabled ?? false,
+    standUpSettings.standUpInterval ?? 30,
+    standUpSettings.standUpPosition ?? 'center-center'
+  );
 
   // Register global shortcut to skip lock (Ctrl+Shift+U+L)
   const shortcutRegistered = globalShortcut.register('CommandOrControl+Shift+U+L', () => {
@@ -475,6 +488,9 @@ app.on('before-quit', () => {
   }
   if (appMonitor) {
     appMonitor.stop();
+  }
+  if (standUpTimer) {
+    standUpTimer.stop();
   }
   if (tray) {
     tray.destroy();

@@ -2,6 +2,7 @@ import React from 'react';
 import { useSettings } from '../store/useSettings';
 import { updateSettings } from '../store/useSettings';
 import { useState, useEffect } from 'react';
+import type { StandUpPosition } from '../../types/settings.types';
 import {
   FaCog,
   FaClock,
@@ -17,6 +18,8 @@ import {
   FaTh,
   FaCheckSquare,
   FaSquare,
+  FaArrowUp,
+  FaBell,
 } from 'react-icons/fa';
 import { showSuccess, showError, showInfo } from '../lib/toast';
 import { NumberInput } from './NumberInput';
@@ -141,15 +144,34 @@ export const SettingsForm: React.FC = () => {
     }
   };
 
+  const handleReset = () => {
+    setLocalSettings(settings);
+    setWorkHours(Math.floor(settings.workHours));
+    setWorkMinutes(Math.round((settings.workHours % 1) * 60));
+    setViewMode(settings.excludedAppsViewMode || 'list');
+    showInfo('Settings reset to saved values');
+  };
+
   return (
     <div className="space-y-10">
-      {/* Header */}
-      <div className="page-header">
-        <h2 className="section-title">
-          <FaCog className="icon-primary" />
-          Settings
-        </h2>
-        <p className="section-description">Manage your focus and break preferences to optimize your productivity.</p>
+      {/* Sticky Header */}
+      <div className="sticky top-0 z-10 bg-bright-gray-50 dark:bg-bright-gray-900 border-b border-bright-gray-200 dark:border-bright-gray-700 pb-4 -mx-6 px-6 pt-2 flex items-center justify-between gap-4">
+        <div>
+          <h2 className="section-title">
+            <FaCog className="icon-primary" />
+            Settings
+          </h2>
+          <p className="section-description">Manage your focus and break preferences to optimize your productivity.</p>
+        </div>
+        <div className="flex items-center gap-x-3 flex-shrink-0">
+          <button type="button" onClick={handleReset} className="btn-secondary">
+            Reset
+          </button>
+          <button onClick={handleSave} className="btn-primary">
+            <FaSave className="-ml-0.5 h-4 w-4" />
+            Save Changes
+          </button>
+        </div>
       </div>
 
       {/* Form Sections */}
@@ -466,6 +488,166 @@ export const SettingsForm: React.FC = () => {
           </div>
         </div>
 
+        {/* Stand Up Reminder Section */}
+        <div className="section-card">
+          <div className="section-header">
+            <h3 className="section-subtitle">
+              <FaArrowUp className="icon-primary" />
+              Stand Up Reminder
+            </h3>
+            <p className="section-description">Get reminded to stand up and stretch regularly</p>
+          </div>
+          <div className="section-body space-y-6">
+            <Checkbox
+              id="standUpEnabled"
+              checked={localSettings.standUpEnabled ?? false}
+              onChange={(checked) => handleChange('standUpEnabled', checked)}
+              label="Enable stand up reminders"
+              description="Show a reminder overlay in the app when it's time to stand up"
+            />
+            {(localSettings.standUpEnabled ?? false) && (
+              <div className="space-y-5">
+                {/* Interval */}
+                <div>
+                  <label htmlFor="standUpInterval" className="form-label">
+                    Reminder Interval
+                  </label>
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <NumberInput
+                        id="standUpInterval"
+                        value={localSettings.standUpInterval ?? 30}
+                        onChange={(value) => handleChange('standUpInterval', value)}
+                        min={1}
+                        max={120}
+                        label="minutes"
+                      />
+                      <span className="text-sm text-primary font-medium">min</span>
+                    </div>
+                    <p className="text-sm text-bright-gray-600 dark:text-bright-gray-400 flex-1">
+                      Remind me every{' '}
+                      <span className="font-semibold text-vista-blue-700 dark:text-vista-blue-400">
+                        {localSettings.standUpInterval ?? 30} minutes
+                      </span>{' '}
+                      to stand up
+                    </p>
+                  </div>
+                  <p className="mt-2 text-xs text-bright-gray-500">Range: 1 to 120 minutes</p>
+                </div>
+
+                {/* Position picker */}
+                <div>
+                  <label className="form-label">Reminder Position</label>
+                  <p className="text-sm text-secondary mb-3">Choose where the reminder appears on your screen</p>
+                  {(() => {
+                    const positions: { value: StandUpPosition; label: string }[] = [
+                      { value: 'top-left', label: 'Top Left' },
+                      { value: 'top-center', label: 'Top Center' },
+                      { value: 'top-right', label: 'Top Right' },
+                      { value: 'center-left', label: 'Center Left' },
+                      { value: 'center-center', label: 'Center' },
+                      { value: 'center-right', label: 'Center Right' },
+                      { value: 'bottom-left', label: 'Bottom Left' },
+                      { value: 'bottom-center', label: 'Bottom Center' },
+                      { value: 'bottom-right', label: 'Bottom Right' },
+                    ];
+                    const current = (localSettings.standUpPosition ?? 'center-center') as StandUpPosition;
+                    const currentLabel = positions.find((p) => p.value === current)?.label ?? 'Center';
+                    return (
+                      <div className="flex items-center gap-5">
+                        {/* 3×3 grid */}
+                        <div
+                          className="grid grid-cols-3 gap-1 p-2 rounded-xl bg-bright-gray-100 dark:bg-bright-gray-800 border border-bright-gray-200 dark:border-bright-gray-700"
+                          style={{ width: 'fit-content' }}
+                        >
+                          {positions.map((pos) => {
+                            const isSelected = current === pos.value;
+                            return (
+                              <button
+                                key={pos.value}
+                                type="button"
+                                title={pos.label}
+                                onClick={() => handleChange('standUpPosition', pos.value)}
+                                className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all ${
+                                  isSelected
+                                    ? 'bg-vista-blue-600 shadow-md'
+                                    : 'bg-white dark:bg-bright-gray-700 hover:bg-vista-blue-100 dark:hover:bg-bright-gray-600 border border-bright-gray-200 dark:border-bright-gray-600'
+                                }`}
+                              >
+                                <span
+                                  className={`block w-2.5 h-2.5 rounded-full ${
+                                    isSelected ? 'bg-white' : 'bg-bright-gray-400 dark:bg-bright-gray-500'
+                                  }`}
+                                />
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {/* Selected label */}
+                        <p className="text-sm text-secondary">
+                          Position:{' '}
+                          <span className="font-semibold text-vista-blue-700 dark:text-vista-blue-400">
+                            {currentLabel}
+                          </span>
+                        </p>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Pre-Lock Warning Section */}
+        <div className="section-card">
+          <div className="section-header">
+            <h3 className="section-subtitle">
+              <FaBell className="icon-primary" />
+              Pre-Lock Warning
+            </h3>
+            <p className="section-description">Get alerted before your screen locks</p>
+          </div>
+          <div className="section-body space-y-6">
+            <Checkbox
+              id="preLockWarningEnabled"
+              checked={localSettings.preLockWarningEnabled ?? false}
+              onChange={(checked) => handleChange('preLockWarningEnabled', checked)}
+              label="Enable pre-lock warning"
+              description="Show a notification before the lock screen activates"
+            />
+            {(localSettings.preLockWarningEnabled ?? false) && (
+              <div>
+                <label htmlFor="preLockWarningMinutes" className="form-label">
+                  Warning Time
+                </label>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <NumberInput
+                      id="preLockWarningMinutes"
+                      value={localSettings.preLockWarningMinutes ?? 5}
+                      onChange={(value) => handleChange('preLockWarningMinutes', value)}
+                      min={1}
+                      max={30}
+                      label="minutes"
+                    />
+                    <span className="text-sm text-primary font-medium">min</span>
+                  </div>
+                  <p className="text-sm text-bright-gray-600 dark:text-bright-gray-400 flex-1">
+                    Warn me{' '}
+                    <span className="font-semibold text-vista-blue-700 dark:text-vista-blue-400">
+                      {localSettings.preLockWarningMinutes ?? 5} minute
+                      {(localSettings.preLockWarningMinutes ?? 5) !== 1 ? 's' : ''}
+                    </span>{' '}
+                    before the screen locks
+                  </p>
+                </div>
+                <p className="mt-2 text-xs text-bright-gray-500">Range: 1 to 30 minutes</p>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* System Integration Section */}
         <div className="section-card">
           <div className="section-header">
@@ -515,27 +697,6 @@ export const SettingsForm: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Action Buttons */}
-      <div className="flex items-center justify-end gap-x-3 divider pt-6">
-        <button
-          type="button"
-          onClick={() => {
-            setLocalSettings(settings);
-            setWorkHours(Math.floor(settings.workHours));
-            setWorkMinutes(Math.round((settings.workHours % 1) * 60));
-            setViewMode(settings.excludedAppsViewMode || 'list');
-            showInfo('Settings reset to saved values');
-          }}
-          className="btn-secondary"
-        >
-          Reset
-        </button>
-        <button onClick={handleSave} className="btn-primary">
-          <FaSave className="-ml-0.5 h-4 w-4" />
-          Save Changes
-        </button>
       </div>
     </div>
   );

@@ -140,13 +140,24 @@ export const Customization: React.FC = () => {
 
   return (
     <div className="space-y-10">
-      {/* Header */}
-      <div className="page-header">
-        <h2 className="section-title">
-          <FaPalette className="icon-primary" />
-          Lock Screen Customization
-        </h2>
-        <p className="section-description">Customize the appearance of your break lock screen</p>
+      {/* Sticky Header */}
+      <div className="sticky top-0 z-10 bg-bright-gray-50 dark:bg-bright-gray-900 border-b border-bright-gray-200 dark:border-bright-gray-700 pb-4 -mx-6 px-6 pt-2 flex items-center justify-between gap-4">
+        <div>
+          <h2 className="section-title">
+            <FaPalette className="icon-primary" />
+            Lock Screen Customization
+          </h2>
+          <p className="section-description">Customize the appearance of your break lock screen</p>
+        </div>
+        <div className="flex items-center gap-x-3 flex-shrink-0">
+          <button type="button" onClick={handleReset} className="btn-secondary">
+            Reset
+          </button>
+          <button onClick={handleSave} className="btn-primary">
+            <FaSave className="-ml-0.5 h-4 w-4" />
+            Save Changes
+          </button>
+        </div>
       </div>
 
       {/* Form Sections */}
@@ -474,17 +485,6 @@ export const Customization: React.FC = () => {
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex items-center justify-end gap-x-3 divider pt-6">
-          <button type="button" onClick={handleReset} className="btn-secondary">
-            Reset
-          </button>
-          <button onClick={handleSave} className="btn-primary">
-            <FaSave className="-ml-0.5 h-4 w-4" />
-            Save Changes
-          </button>
         </div>
       </div>
 

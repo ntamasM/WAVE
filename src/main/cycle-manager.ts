@@ -4,6 +4,7 @@ import { CycleStatus, CycleState } from '../types/cycle.types';
 import { LockWindow } from './lock-window';
 import { Logger } from './logger';
 import { AppMonitor } from './app-monitor';
+import { PreLockWindow } from './pre-lock-window';
 
 const logger = new Logger('cycle-manager');
 
@@ -20,6 +21,8 @@ export class CycleManager {
   private mainWindow: BrowserWindow | null = null;
   private systemWasAsleep = false;
   private lockWindow: LockWindow;
+  private preLockWindow: PreLockWindow;
+  private preLockWarningFired = false;
   private appMonitor: AppMonitor | null = null;
   private wasAutoPaused = false; // Track if cycle was auto-paused due to app activity
 
@@ -27,6 +30,7 @@ export class CycleManager {
     this.settings = settings;
     this.mainWindow = mainWindow;
     this.lockWindow = new LockWindow();
+    this.preLockWindow = new PreLockWindow();
     this.appMonitor = appMonitor || null;
     this.state = {
       phase: 'work',
@@ -41,6 +45,7 @@ export class CycleManager {
     logger.info('Cycle started');
     this.state.workStartedAt = Date.now();
     this.state.phase = 'work';
+    this.preLockWarningFired = false;
 
     if (this.intervalId) {
       clearInterval(this.intervalId);
@@ -153,6 +158,16 @@ export class CycleManager {
   }
 
   private handleWorkPhase(remainingMs: number): void {
+    const warningEnabled = this.settings.preLockWarningEnabled ?? false;
+    const warningMinutes = this.settings.preLockWarningMinutes ?? 5;
+
+    // Show pre-lock warning once when within the warning window
+    if (warningEnabled && !this.preLockWarningFired && remainingMs > 0 && remainingMs <= warningMinutes * 60 * 1000) {
+      this.preLockWarningFired = true;
+      this.preLockWindow.show(warningMinutes);
+      logger.info(`Pre-lock warning shown: ${warningMinutes}m before lock`);
+    }
+
     if (remainingMs <= 0) {
       // Work time elapsed, lock immediately
       logger.info('Work time elapsed, locking immediately');
@@ -174,6 +189,7 @@ export class CycleManager {
       this.state.phase = 'work';
       this.state.workStartedAt = Date.now();
       this.state.breakStartedAt = null;
+      this.preLockWarningFired = false;
       this.emit('cycle:phase-changed', 'work');
     }
   }
@@ -181,6 +197,9 @@ export class CycleManager {
   private async executeLock(): Promise<void> {
     try {
       logger.info('Showing lock window...');
+
+      // Close pre-lock warning if it's still open
+      this.preLockWindow.close();
 
       // Create and show lock window
       const lockDurationMs = this.settings.lockMinutes * 60 * 1000;
@@ -243,9 +262,14 @@ export class CycleManager {
     this.state.phase = 'work';
     this.state.workStartedAt = Date.now();
     this.state.breakStartedAt = null;
+    this.preLockWarningFired = false;
     this.emit('cycle:phase-changed', 'work');
 
     logger.info('Work cycle restarted after skip');
+  }
+
+  closePreLockWarning(): void {
+    this.preLockWindow.close();
   }
 
   private emit(channel: string, data?: unknown): void {
@@ -255,6 +279,8 @@ export class CycleManager {
   }
 
   reset(): void {
+    this.preLockWindow.close();
+    this.preLockWarningFired = false;
     this.state = {
       phase: 'work',
       workStartedAt: Date.now(),

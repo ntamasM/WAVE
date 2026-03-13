@@ -54,6 +54,10 @@ const api = {
   onLockUpdate: (callback) => {
     electron.ipcRenderer.on("lock:update", (_event, data) => callback(data));
   },
+  // Stand up reminder
+  dismissStandUp: () => electron.ipcRenderer.send("standup:dismiss"),
+  // Pre-lock warning
+  dismissPreLock: () => electron.ipcRenderer.send("prelock:dismiss"),
   removeAllListeners: (channel) => {
     electron.ipcRenderer.removeAllListeners(channel);
   }

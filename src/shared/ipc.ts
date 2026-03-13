@@ -39,6 +39,43 @@ export function validateSettingsInput(settings: Partial<Settings>): { valid: boo
     }
   }
 
+  if (settings.standUpEnabled !== undefined && typeof settings.standUpEnabled !== 'boolean') {
+    errors.push('standUpEnabled must be a boolean');
+  }
+
+  if (settings.standUpInterval !== undefined) {
+    if (
+      typeof settings.standUpInterval !== 'number' ||
+      settings.standUpInterval < 1 ||
+      settings.standUpInterval > 120
+    ) {
+      errors.push('standUpInterval must be between 1 and 120 minutes');
+    }
+  }
+
+  const validPositions = [
+    'top-left', 'top-center', 'top-right',
+    'center-left', 'center-center', 'center-right',
+    'bottom-left', 'bottom-center', 'bottom-right',
+  ];
+  if (settings.standUpPosition !== undefined && !validPositions.includes(settings.standUpPosition)) {
+    errors.push(`standUpPosition must be one of: ${validPositions.join(', ')}`);
+  }
+
+  if (settings.preLockWarningEnabled !== undefined && typeof settings.preLockWarningEnabled !== 'boolean') {
+    errors.push('preLockWarningEnabled must be a boolean');
+  }
+
+  if (settings.preLockWarningMinutes !== undefined) {
+    if (
+      typeof settings.preLockWarningMinutes !== 'number' ||
+      settings.preLockWarningMinutes < 1 ||
+      settings.preLockWarningMinutes > 30
+    ) {
+      errors.push('preLockWarningMinutes must be between 1 and 30');
+    }
+  }
+
   return {
     valid: errors.length === 0,
     errors,

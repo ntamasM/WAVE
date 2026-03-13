@@ -66,6 +66,35 @@ export class SettingsStore {
           type: 'array',
           default: DEFAULT_SETTINGS.installedApps || [],
         },
+        standUpEnabled: {
+          type: 'boolean',
+          default: DEFAULT_SETTINGS.standUpEnabled ?? false,
+        },
+        standUpInterval: {
+          type: 'number',
+          default: DEFAULT_SETTINGS.standUpInterval ?? 30,
+          minimum: 1,
+          maximum: 120,
+        },
+        standUpPosition: {
+          type: 'string',
+          enum: [
+            'top-left', 'top-center', 'top-right',
+            'center-left', 'center-center', 'center-right',
+            'bottom-left', 'bottom-center', 'bottom-right',
+          ],
+          default: DEFAULT_SETTINGS.standUpPosition ?? 'center-center',
+        },
+        preLockWarningEnabled: {
+          type: 'boolean',
+          default: DEFAULT_SETTINGS.preLockWarningEnabled ?? false,
+        },
+        preLockWarningMinutes: {
+          type: 'number',
+          default: DEFAULT_SETTINGS.preLockWarningMinutes ?? 5,
+          minimum: 1,
+          maximum: 30,
+        },
       },
       defaults: DEFAULT_SETTINGS,
       name: 'wave-settings',
@@ -93,6 +122,11 @@ export class SettingsStore {
         category: string;
         processNames: string[];
       }>,
+      standUpEnabled: this.store.get('standUpEnabled', DEFAULT_SETTINGS.standUpEnabled ?? false) as boolean,
+      standUpInterval: this.store.get('standUpInterval', DEFAULT_SETTINGS.standUpInterval ?? 30) as number,
+      standUpPosition: this.store.get('standUpPosition', DEFAULT_SETTINGS.standUpPosition ?? 'center-center') as import('../types/settings.types').StandUpPosition,
+      preLockWarningEnabled: this.store.get('preLockWarningEnabled', DEFAULT_SETTINGS.preLockWarningEnabled ?? false) as boolean,
+      preLockWarningMinutes: this.store.get('preLockWarningMinutes', DEFAULT_SETTINGS.preLockWarningMinutes ?? 5) as number,
     };
   }
 

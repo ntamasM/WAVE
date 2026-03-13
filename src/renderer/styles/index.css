@@ -235,3 +235,28 @@ code {
     @apply border-b border-bright-gray-200 dark:border-bright-gray-700 pb-6;
   }
 }
+
+/* Stand Up Overlay animations */
+@keyframes standup-slide-in {
+  from {
+    transform: translateY(-110%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes standup-progress {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
+.standup-slide-in {
+  animation: standup-slide-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
