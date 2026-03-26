@@ -1,23 +1,17 @@
 import React from 'react';
 import { useSettings } from '../store/useSettings';
 import { updateSettings } from '../store/useSettings';
-import { useState, useEffect } from 'react';
-import type { StandUpPosition } from '../../types/settings.types';
+import { useState } from 'react';
+import type { Settings, StandUpPosition } from '../../types/settings.types';
+import { getErrorMessage } from '../../shared/errors';
 import {
   FaCog,
-  FaClock,
-  FaCoffee,
+  FaLock,
   FaWindowMaximize,
   FaSave,
   FaFolder,
   FaMoon,
   FaSun,
-  FaBan,
-  FaSync,
-  FaList,
-  FaTh,
-  FaCheckSquare,
-  FaSquare,
   FaArrowUp,
   FaBell,
 } from 'react-icons/fa';
@@ -28,9 +22,6 @@ import { Checkbox } from './Checkbox';
 export const SettingsForm: React.FC = () => {
   const { settings } = useSettings();
   const [localSettings, setLocalSettings] = useState(settings);
-  const [availableApps, setAvailableApps] = useState<Array<{ id: string; name: string; category: string }>>([]);
-  const [loadingApps, setLoadingApps] = useState(true);
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>(settings.excludedAppsViewMode || 'list');
 
   // Separate state for hours and minutes
   const [workHours, setWorkHours] = useState(Math.floor(settings.workHours));
@@ -41,75 +32,13 @@ export const SettingsForm: React.FC = () => {
     setLocalSettings(settings);
     setWorkHours(Math.floor(settings.workHours));
     setWorkMinutes(Math.round((settings.workHours % 1) * 60));
-    setViewMode(settings.excludedAppsViewMode || 'list');
   }, [settings]);
 
-  // Load available apps on mount
-  useEffect(() => {
-    const loadApps = async () => {
-      try {
-        setLoadingApps(true);
-        const apps = await window.waveAPI.getAvailableApps();
-        setAvailableApps(apps);
-      } catch (error) {
-        showError('Failed to load available apps');
-        console.error(error);
-      } finally {
-        setLoadingApps(false);
-      }
-    };
-
-    loadApps();
-  }, []);
-
-  const handleChange = (field: keyof typeof settings, value: number | boolean | string | string[]) => {
+  const handleChange = <K extends keyof Settings>(field: K, value: Settings[K]) => {
     setLocalSettings({
       ...localSettings,
       [field]: value,
     });
-  };
-
-  const handleViewModeChange = (mode: 'list' | 'grid') => {
-    setViewMode(mode);
-    handleChange('excludedAppsViewMode', mode);
-  };
-
-  const handleExcludedAppToggle = (appId: string) => {
-    const currentExcluded = localSettings.excludedApps || [];
-    const newExcluded = currentExcluded.includes(appId)
-      ? currentExcluded.filter((id) => id !== appId)
-      : [...currentExcluded, appId];
-
-    handleChange('excludedApps', newExcluded);
-  };
-
-  const handleSelectAll = () => {
-    const allAppIds = availableApps.map((app) => app.id);
-    const currentExcluded = localSettings.excludedApps || [];
-    const allSelected = allAppIds.every((id) => currentExcluded.includes(id));
-
-    if (allSelected) {
-      // Deselect all
-      handleChange('excludedApps', []);
-    } else {
-      // Select all
-      handleChange('excludedApps', allAppIds);
-    }
-  };
-
-  const handleRefreshApps = async () => {
-    try {
-      setLoadingApps(true);
-      showInfo('Scanning for installed applications...');
-      const apps = await window.waveAPI.scanInstalledApps();
-      setAvailableApps(apps);
-      showSuccess(`Found ${apps.length} installed applications`);
-    } catch (error) {
-      showError('Failed to scan for apps');
-      console.error(error);
-    } finally {
-      setLoadingApps(false);
-    }
   };
 
   const handleWorkTimeChange = (hours: number, minutes: number) => {
@@ -124,10 +53,23 @@ export const SettingsForm: React.FC = () => {
 
   const handleSave = async () => {
     try {
-      const changes: Record<string, number | boolean | string | string[]> = {};
-      Object.keys(localSettings).forEach((key) => {
-        if (localSettings[key as keyof typeof settings] !== settings[key as keyof typeof settings]) {
-          changes[key] = localSettings[key as keyof typeof settings] as number | boolean | string | string[];
+      const changes: Partial<Settings> = {};
+      (Object.keys(localSettings) as Array<keyof Settings>).forEach((key) => {
+        const localVal = localSettings[key];
+        const savedVal = settings[key];
+
+        // Deep compare arrays, shallow compare primitives
+        if (Array.isArray(localVal) && Array.isArray(savedVal)) {
+          if (localVal.length !== savedVal.length || localVal.some((v, i) => v !== savedVal[i])) {
+            (changes as Record<string, unknown>)[key] = localVal;
+          }
+        } else if (typeof localVal === 'object' && localVal !== null) {
+          // Skip complex objects (customization) unless they differ by reference
+          if (localVal !== savedVal) {
+            (changes as Record<string, unknown>)[key] = localVal;
+          }
+        } else if (localVal !== savedVal) {
+          (changes as Record<string, unknown>)[key] = localVal;
         }
       });
 
@@ -139,7 +81,7 @@ export const SettingsForm: React.FC = () => {
       await updateSettings(changes);
       showSuccess('Settings saved successfully!');
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      const errorMsg = getErrorMessage(err);
       showError(`Failed to save settings: ${errorMsg}`);
     }
   };
@@ -148,7 +90,6 @@ export const SettingsForm: React.FC = () => {
     setLocalSettings(settings);
     setWorkHours(Math.floor(settings.workHours));
     setWorkMinutes(Math.round((settings.workHours % 1) * 60));
-    setViewMode(settings.excludedAppsViewMode || 'list');
     showInfo('Settings reset to saved values');
   };
 
@@ -225,14 +166,14 @@ export const SettingsForm: React.FC = () => {
           </div>
         </div>
 
-        {/* Time Configuration Section */}
+        {/* Lock Settings Section */}
         <div className="section-card">
           <div className="section-header">
             <h3 className="section-subtitle">
-              <FaClock className="icon-primary" />
-              Time Configuration
+              <FaLock className="icon-primary" />
+              Lock Settings
             </h3>
-            <p className="section-description">Set your work and break durations</p>
+            <p className="section-description">Configure work and break durations and lock behavior</p>
           </div>
           <div className="section-body space-y-6">
             {/* Work Duration */}
@@ -301,190 +242,95 @@ export const SettingsForm: React.FC = () => {
               </div>
               <p className="mt-2 text-xs text-bright-gray-500">Range: 1 to 60 minutes</p>
             </div>
+
+            {/* Show Skip Button */}
+            <div className="pt-4 border-t border-bright-gray-200 dark:border-bright-gray-700">
+              <Checkbox
+                id="showSkipButton"
+                checked={localSettings.showSkipButton}
+                onChange={(checked) => handleChange('showSkipButton', checked)}
+                label="Show skip button"
+                description="Display a skip button during breaks to allow ending the break early"
+              />
+            </div>
           </div>
         </div>
 
-        {/* Behavior Preferences Section */}
+        {/* Pre-Lock Warning Section */}
         <div className="section-card">
           <div className="section-header">
             <h3 className="section-subtitle">
-              <FaCoffee className="icon-primary" />
-              Behavior Preferences
+              <FaBell className="icon-primary" />
+              Pre-Lock Warning
             </h3>
-            <p className="section-description">Customize how breaks work</p>
+            <p className="section-description">Get alerted before your screen locks</p>
           </div>
-          <div className="section-body space-y-4">
-            {/* Show Skip Button */}
+          <div className="section-body space-y-6">
             <Checkbox
-              id="showSkipButton"
-              checked={localSettings.showSkipButton}
-              onChange={(checked) => handleChange('showSkipButton', checked)}
-              label="Show skip button"
-              description="Display a skip button during breaks to allow ending the break early"
+              id="preLockWarningEnabled"
+              checked={localSettings.preLockWarningEnabled ?? false}
+              onChange={(checked) => handleChange('preLockWarningEnabled', checked)}
+              label="Enable pre-lock warning"
+              description="Show a notification before the lock screen activates"
             />
-
-            {/* Excluded Applications */}
-            <div className="pt-4 border-t border-bright-gray-200 dark:border-bright-gray-700">
-              <div className="mb-3">
-                <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <h4 className="form-label flex items-center gap-2 mb-1">
-                      <FaBan className="text-vista-blue-600 dark:text-vista-blue-400" />
-                      Excluded Applications
-                    </h4>
-                    <p className="text-secondary text-sm">
-                      WAVE will automatically pause when you&apos;re in a call or watching videos fullscreen in these
-                      apps
-                    </p>
+            {(localSettings.preLockWarningEnabled ?? false) && (
+              <div className="space-y-5">
+                {/* Reminders */}
+                <div>
+                  <label className="form-label">Reminders</label>
+                  <p className="text-sm text-secondary mb-3">
+                    Choose when to show reminders before the lock (up to 3)
+                  </p>
+                  <div className="flex items-center gap-3">
+                    {[5, 3, 1].map((minutes) => {
+                      const reminders = localSettings.preLockReminders ?? [5];
+                      const isActive = reminders.includes(minutes);
+                      return (
+                        <button
+                          key={minutes}
+                          type="button"
+                          onClick={() => {
+                            const current = localSettings.preLockReminders ?? [5];
+                            const updated = isActive
+                              ? current.filter((m) => m !== minutes)
+                              : [...current, minutes];
+                            if (updated.length > 0) {
+                              handleChange('preLockReminders', updated);
+                            }
+                          }}
+                          className={`px-4 py-2 rounded-lg border-2 font-semibold text-sm transition-all ${
+                            isActive
+                              ? 'border-amber-500 bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-600'
+                              : 'border-bright-gray-300 dark:border-bright-gray-600 bg-white dark:bg-bright-gray-700 text-bright-gray-500 dark:text-bright-gray-400 hover:border-bright-gray-400 dark:hover:border-bright-gray-500'
+                          }`}
+                        >
+                          {minutes} min
+                        </button>
+                      );
+                    })}
                   </div>
-                  <div className="flex items-center gap-2">
-                    {/* View Toggle Buttons */}
-                    <div className="flex bg-bright-gray-100 dark:bg-bright-gray-800 rounded-lg p-1">
-                      <button
-                        type="button"
-                        onClick={() => handleViewModeChange('list')}
-                        className={`p-2 rounded transition-colors ${
-                          viewMode === 'list'
-                            ? 'bg-white dark:bg-bright-gray-700 text-vista-blue-600 dark:text-vista-blue-400 shadow-sm'
-                            : 'text-bright-gray-600 dark:text-bright-gray-400 hover:text-vista-blue-600 dark:hover:text-vista-blue-400'
-                        }`}
-                        title="List view"
-                      >
-                        <FaList className="h-4 w-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleViewModeChange('grid')}
-                        className={`p-2 rounded transition-colors ${
-                          viewMode === 'grid'
-                            ? 'bg-white dark:bg-bright-gray-700 text-vista-blue-600 dark:text-vista-blue-400 shadow-sm'
-                            : 'text-bright-gray-600 dark:text-bright-gray-400 hover:text-vista-blue-600 dark:hover:text-vista-blue-400'
-                        }`}
-                        title="Grid view"
-                      >
-                        <FaTh className="h-4 w-4" />
-                      </button>
-                    </div>
+                  <p className="mt-2 text-xs text-bright-gray-500">
+                    {(() => {
+                      const reminders = [...(localSettings.preLockReminders ?? [5])].sort((a, b) => b - a);
+                      return reminders.length === 1
+                        ? `1 reminder: ${reminders[0]} min before lock`
+                        : `${reminders.length} reminders: ${reminders.join(', ')} min before lock`;
+                    })()}
+                  </p>
+                </div>
 
-                    {/* Select All Button */}
-                    <button
-                      type="button"
-                      onClick={handleSelectAll}
-                      disabled={loadingApps || availableApps.length === 0}
-                      className="btn-secondary flex items-center gap-2 whitespace-nowrap"
-                      title={
-                        availableApps.length > 0 &&
-                        availableApps.every((app) => (localSettings.excludedApps || []).includes(app.id))
-                          ? 'Deselect all'
-                          : 'Select all'
-                      }
-                    >
-                      {availableApps.length > 0 &&
-                      availableApps.every((app) => (localSettings.excludedApps || []).includes(app.id)) ? (
-                        <>
-                          <FaSquare className="h-4 w-4" />
-                          Deselect All
-                        </>
-                      ) : (
-                        <>
-                          <FaCheckSquare className="h-4 w-4" />
-                          Select All
-                        </>
-                      )}
-                    </button>
-
-                    {/* Refresh Button */}
-                    <button
-                      type="button"
-                      onClick={handleRefreshApps}
-                      disabled={loadingApps}
-                      className="btn-secondary flex items-center gap-2"
-                      title="Scan for newly installed applications"
-                    >
-                      <FaSync className={`h-4 w-4 ${loadingApps ? 'animate-spin' : ''}`} />
-                      Refresh
-                    </button>
-                  </div>
+                {/* Skip Lock on last reminder */}
+                <div className="pt-4 border-t border-bright-gray-200 dark:border-bright-gray-700">
+                  <Checkbox
+                    id="preLockSkipEnabled"
+                    checked={localSettings.preLockSkipEnabled ?? false}
+                    onChange={(checked) => handleChange('preLockSkipEnabled', checked)}
+                    label="Show skip button on last reminder"
+                    description="Adds a button to the final reminder that resets the work countdown"
+                  />
                 </div>
               </div>
-
-              {/* App Scan Interval Setting */}
-              <div className="mb-4 p-4 bg-bright-gray-50 dark:bg-bright-gray-800 rounded-lg border border-bright-gray-200 dark:border-bright-gray-700">
-                <label htmlFor="appScanInterval" className="form-label mb-2">
-                  Automatic App Scan Interval
-                </label>
-                <div className="flex items-center gap-4">
-                  <select
-                    id="appScanInterval"
-                    value={localSettings.appScanInterval ?? 30}
-                    onChange={(e) => handleChange('appScanInterval', parseInt(e.target.value))}
-                    className="px-3 py-2 rounded-lg border border-bright-gray-300 dark:border-bright-gray-600 bg-white dark:bg-bright-gray-700 text-bright-gray-900 dark:text-bright-gray-100 focus:ring-2 focus:ring-vista-blue-500 focus:border-transparent"
-                  >
-                    <option value="0">Disabled (Manual only)</option>
-                    <option value="10">Every 10 days</option>
-                    <option value="15">Every 15 days</option>
-                    <option value="20">Every 20 days</option>
-                    <option value="25">Every 25 days</option>
-                    <option value="30">Every 30 days</option>
-                  </select>
-                  <p className="text-sm text-secondary flex-1">
-                    {localSettings.appScanInterval === 0
-                      ? 'Automatic scanning is disabled. Apps will only be scanned when you click the Refresh button.'
-                      : `WAVE will automatically scan for new applications every ${localSettings.appScanInterval} days.`}
-                  </p>
-                </div>
-                {localSettings.lastAppScan && localSettings.lastAppScan > 0 && (
-                  <p className="mt-2 text-xs text-bright-gray-500 dark:text-bright-gray-500">
-                    Last scanned: {new Date(localSettings.lastAppScan).toLocaleDateString()} at{' '}
-                    {new Date(localSettings.lastAppScan).toLocaleTimeString()}
-                  </p>
-                )}
-              </div>
-
-              {loadingApps ? (
-                <div className="text-center py-4">
-                  <p className="text-secondary">Scanning for installed applications...</p>
-                </div>
-              ) : availableApps.length === 0 ? (
-                <div className="text-center py-4">
-                  <p className="text-secondary">
-                    No monitored applications found. Click &quot;Refresh&quot; to scan for installed apps.
-                  </p>
-                </div>
-              ) : (
-                <div
-                  className={`max-h-80 overflow-y-auto p-5 rounded border border-bright-gray-200 dark:border-bright-gray-700 ${
-                    viewMode === 'grid' ? 'grid grid-cols-2 md:grid-cols-3 gap-3' : 'space-y-2'
-                  }`}
-                >
-                  {availableApps.map((app) => (
-                    <div
-                      key={app.id}
-                      className={`p-3 rounded border border-bright-gray-200 dark:border-bright-gray-700 hover:bg-bright-gray-50 dark:hover:bg-bright-gray-700 transition-colors ${
-                        viewMode === 'grid' ? '' : ''
-                      }`}
-                    >
-                      <Checkbox
-                        id={`app-${app.id}`}
-                        checked={(localSettings.excludedApps || []).includes(app.id)}
-                        onChange={() => handleExcludedAppToggle(app.id)}
-                        label={app.name}
-                        description={
-                          app.category === 'communication'
-                            ? 'Pauses during calls'
-                            : app.category === 'media'
-                              ? 'Pauses during fullscreen playback'
-                              : app.category === 'browser'
-                                ? 'Pauses during fullscreen videos'
-                                : ''
-                        }
-                        // className={viewMode === 'grid' ? 'flex-col' : ''}
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            )}
           </div>
         </div>
 
@@ -599,55 +445,6 @@ export const SettingsForm: React.FC = () => {
           </div>
         </div>
 
-        {/* Pre-Lock Warning Section */}
-        <div className="section-card">
-          <div className="section-header">
-            <h3 className="section-subtitle">
-              <FaBell className="icon-primary" />
-              Pre-Lock Warning
-            </h3>
-            <p className="section-description">Get alerted before your screen locks</p>
-          </div>
-          <div className="section-body space-y-6">
-            <Checkbox
-              id="preLockWarningEnabled"
-              checked={localSettings.preLockWarningEnabled ?? false}
-              onChange={(checked) => handleChange('preLockWarningEnabled', checked)}
-              label="Enable pre-lock warning"
-              description="Show a notification before the lock screen activates"
-            />
-            {(localSettings.preLockWarningEnabled ?? false) && (
-              <div>
-                <label htmlFor="preLockWarningMinutes" className="form-label">
-                  Warning Time
-                </label>
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <NumberInput
-                      id="preLockWarningMinutes"
-                      value={localSettings.preLockWarningMinutes ?? 5}
-                      onChange={(value) => handleChange('preLockWarningMinutes', value)}
-                      min={1}
-                      max={30}
-                      label="minutes"
-                    />
-                    <span className="text-sm text-primary font-medium">min</span>
-                  </div>
-                  <p className="text-sm text-bright-gray-600 dark:text-bright-gray-400 flex-1">
-                    Warn me{' '}
-                    <span className="font-semibold text-vista-blue-700 dark:text-vista-blue-400">
-                      {localSettings.preLockWarningMinutes ?? 5} minute
-                      {(localSettings.preLockWarningMinutes ?? 5) !== 1 ? 's' : ''}
-                    </span>{' '}
-                    before the screen locks
-                  </p>
-                </div>
-                <p className="mt-2 text-xs text-bright-gray-500">Range: 1 to 30 minutes</p>
-              </div>
-            )}
-          </div>
-        </div>
-
         {/* System Integration Section */}
         <div className="section-card">
           <div className="section-header">
@@ -685,7 +482,7 @@ export const SettingsForm: React.FC = () => {
                     await window.waveAPI.openLogsFolder();
                     showSuccess('Logs folder opened');
                   } catch (err) {
-                    const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+                    const errorMsg = getErrorMessage(err);
                     showError(`Failed to open logs folder: ${errorMsg}`);
                   }
                 }}

@@ -31,14 +31,6 @@ export function validateSettingsInput(settings: Partial<Settings>): { valid: boo
     errors.push('enableLogging must be a boolean');
   }
 
-  if (settings.excludedApps !== undefined) {
-    if (!Array.isArray(settings.excludedApps)) {
-      errors.push('excludedApps must be an array');
-    } else if (!settings.excludedApps.every((app) => typeof app === 'string')) {
-      errors.push('excludedApps must be an array of strings');
-    }
-  }
-
   if (settings.standUpEnabled !== undefined && typeof settings.standUpEnabled !== 'boolean') {
     errors.push('standUpEnabled must be a boolean');
   }
@@ -66,14 +58,18 @@ export function validateSettingsInput(settings: Partial<Settings>): { valid: boo
     errors.push('preLockWarningEnabled must be a boolean');
   }
 
-  if (settings.preLockWarningMinutes !== undefined) {
-    if (
-      typeof settings.preLockWarningMinutes !== 'number' ||
-      settings.preLockWarningMinutes < 1 ||
-      settings.preLockWarningMinutes > 30
-    ) {
-      errors.push('preLockWarningMinutes must be between 1 and 30');
+  if (settings.preLockReminders !== undefined) {
+    if (!Array.isArray(settings.preLockReminders)) {
+      errors.push('preLockReminders must be an array');
+    } else if (settings.preLockReminders.length > 3) {
+      errors.push('preLockReminders can have at most 3 entries');
+    } else if (!settings.preLockReminders.every((v) => [1, 3, 5].includes(v))) {
+      errors.push('preLockReminders values must be 1, 3, or 5');
     }
+  }
+
+  if (settings.preLockSkipEnabled !== undefined && typeof settings.preLockSkipEnabled !== 'boolean') {
+    errors.push('preLockSkipEnabled must be a boolean');
   }
 
   return {

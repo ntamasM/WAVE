@@ -1,36 +1,13 @@
 "use strict";
-var __create = Object.create;
-var __defProp = Object.defineProperty;
-var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
-var __getOwnPropNames = Object.getOwnPropertyNames;
-var __getProtoOf = Object.getPrototypeOf;
-var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __copyProps = (to, from, except, desc) => {
-  if (from && typeof from === "object" || typeof from === "function") {
-    for (let key of __getOwnPropNames(from))
-      if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
-  }
-  return to;
-};
-var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
-  // If the importer is in node compatibility mode or this is not an ESM
-  // file that has been converted to a CommonJS file using a Babel-
-  // compatible transform (i.e. "__esModule" has not been set), then set
-  // "default" to the CommonJS "module.exports" for node compatibility.
-  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
-  mod
-));
 const require$$1 = require("electron");
 const path$6 = require("path");
-const fs$3 = require("fs");
+const fs$3 = require("fs/promises");
 const require$$1$2 = require("util");
+const require$$0 = require("fs");
 const require$$3$1 = require("crypto");
 const require$$4 = require("assert");
 const require$$5 = require("events");
 const require$$1$1 = require("os");
-const child_process = require("child_process");
-const fs$4 = require("fs/promises");
 const is = {
   dev: !require$$1.app.isPackaged
 };
@@ -39,16 +16,23 @@ const is = {
   isMacOS: process.platform === "darwin",
   isLinux: process.platform === "linux"
 });
+const CLEANUP_INTERVAL_MS = 60 * 60 * 1e3;
 class Logger {
   context;
   logDir;
+  static lastCleanup = 0;
+  writeQueue = [];
+  flushing = false;
+  dirReady;
   constructor(context) {
     this.context = context;
-    const app2 = require("electron").app;
-    this.logDir = path$6.join(app2.getPath("userData"), "logs");
-    if (!fs$3.existsSync(this.logDir)) {
-      fs$3.mkdirSync(this.logDir, { recursive: true });
-    }
+    this.logDir = path$6.join(require$$1.app.getPath("userData"), "logs");
+    this.dirReady = fs$3.access(this.logDir).catch(
+      () => fs$3.mkdir(this.logDir, { recursive: true })
+    ).then(() => {
+    }).catch(
+      (err) => console.error("Failed to create log directory:", err)
+    );
   }
   getTimestamp() {
     return (/* @__PURE__ */ new Date()).toISOString();
@@ -63,27 +47,44 @@ class Logger {
     } else {
       console.log(logMessage);
     }
-    try {
-      const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
-      const logFile = path$6.join(this.logDir, `wave-${today}.log`);
-      fs$3.appendFileSync(logFile, logMessage + "\n");
+    this.writeQueue.push(logMessage);
+    this.flush();
+    const now = Date.now();
+    if (now - Logger.lastCleanup > CLEANUP_INTERVAL_MS) {
+      Logger.lastCleanup = now;
       this.cleanOldLogs();
-    } catch (err) {
-      console.error("Failed to write to log file:", err);
     }
   }
-  cleanOldLogs() {
+  async flush() {
+    if (this.flushing || this.writeQueue.length === 0) return;
+    this.flushing = true;
     try {
-      const files = fs$3.readdirSync(this.logDir);
+      await this.dirReady;
+      const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
+      const logFile = path$6.join(this.logDir, `wave-${today}.log`);
+      const batch = this.writeQueue.splice(0).join("\n") + "\n";
+      await fs$3.appendFile(logFile, batch);
+    } catch (err) {
+      console.error("Failed to write to log file:", err);
+    } finally {
+      this.flushing = false;
+      if (this.writeQueue.length > 0) {
+        this.flush();
+      }
+    }
+  }
+  async cleanOldLogs() {
+    try {
+      const files = await fs$3.readdir(this.logDir);
       const now = Date.now();
       const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1e3;
-      files.forEach((file) => {
+      for (const file of files) {
         const filePath = path$6.join(this.logDir, file);
-        const stats = fs$3.statSync(filePath);
+        const stats = await fs$3.stat(filePath);
         if (stats.mtime.getTime() < sevenDaysAgo) {
-          fs$3.unlinkSync(filePath);
+          await fs$3.unlink(filePath);
         }
-      });
+      }
     } catch (err) {
       console.error("Failed to clean old logs:", err);
     }
@@ -213,7 +214,7 @@ var pkgUp = { exports: {} };
 var findUp$1 = { exports: {} };
 var locatePath$1 = { exports: {} };
 var pathExists$1 = { exports: {} };
-const fs$2 = fs$3;
+const fs$2 = require$$0;
 pathExists$1.exports = (fp) => new Promise((resolve2) => {
   fs$2.access(fp, (err) => {
     resolve2(!err);
@@ -591,7 +592,7 @@ const retryifySync = (fn, isRetriableError) => {
 };
 retryify.retryifySync = retryifySync;
 Object.defineProperty(fs$1, "__esModule", { value: true });
-const fs = fs$3;
+const fs = require$$0;
 const util_1$r = require$$1$2;
 const attemptify_1 = attemptify;
 const fs_handlers_1 = fs_handlers;
@@ -6958,7 +6959,7 @@ const require$$3 = {
   properties,
   "default": true
 };
-(function(module2, exports) {
+(function(module, exports) {
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.MissingRefError = exports.ValidationError = exports.CodeGen = exports.Name = exports.nil = exports.stringify = exports.str = exports._ = exports.KeywordCxt = exports.Ajv = void 0;
   const core_12 = core$2;
@@ -6987,8 +6988,8 @@ const require$$3 = {
     }
   }
   exports.Ajv = Ajv;
-  module2.exports = exports = Ajv;
-  module2.exports.Ajv = Ajv;
+  module.exports = exports = Ajv;
+  module.exports.Ajv = Ajv;
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.default = Ajv;
   var validate_12 = validate;
@@ -7256,7 +7257,7 @@ var limit = {};
   };
   exports.default = formatLimitPlugin;
 })(limit);
-(function(module2, exports) {
+(function(module, exports) {
   Object.defineProperty(exports, "__esModule", { value: true });
   const formats_1 = formats;
   const limit_1 = limit;
@@ -7289,7 +7290,7 @@ var limit = {};
     for (const f of list)
       ajv2.addFormat(f, fs2[f]);
   }
-  module2.exports = exports = formatsPlugin;
+  module.exports = exports = formatsPlugin;
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.default = formatsPlugin;
 })(dist, dist.exports);
@@ -7407,14 +7408,14 @@ var constants$1 = {
 const debug$1 = typeof process === "object" && process.env && process.env.NODE_DEBUG && /\bsemver\b/i.test(process.env.NODE_DEBUG) ? (...args) => console.error("SEMVER", ...args) : () => {
 };
 var debug_1 = debug$1;
-(function(module2, exports) {
+(function(module, exports) {
   const {
     MAX_SAFE_COMPONENT_LENGTH: MAX_SAFE_COMPONENT_LENGTH2,
     MAX_SAFE_BUILD_LENGTH: MAX_SAFE_BUILD_LENGTH2,
     MAX_LENGTH: MAX_LENGTH2
   } = constants$1;
   const debug2 = debug_1;
-  exports = module2.exports = {};
+  exports = module.exports = {};
   const re2 = exports.re = [];
   const safeRe = exports.safeRe = [];
   const src = exports.src = [];
@@ -9048,7 +9049,7 @@ onetime$1.exports.callCount = (function_) => {
   return calledFunctions.get(function_);
 };
 var onetimeExports = onetime$1.exports;
-(function(module2, exports) {
+(function(module, exports) {
   var __classPrivateFieldSet = commonjsGlobal && commonjsGlobal.__classPrivateFieldSet || function(receiver, state, value, kind, f) {
     if (kind === "m") throw new TypeError("Private method is not writable");
     if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
@@ -9064,7 +9065,7 @@ var onetimeExports = onetime$1.exports;
   var _Conf_validator, _Conf_encryptionKey, _Conf_options, _Conf_defaultValues;
   Object.defineProperty(exports, "__esModule", { value: true });
   const util_12 = require$$1$2;
-  const fs2 = fs$3;
+  const fs2 = require$$0;
   const path2 = path$6;
   const crypto = require$$3$1;
   const assert = require$$4;
@@ -9088,7 +9089,7 @@ var onetimeExports = onetime$1.exports;
   let parentDir = "";
   try {
     delete require.cache[__filename];
-    parentDir = path2.dirname((_b = (_a = module2.parent) === null || _a === void 0 ? void 0 : _a.filename) !== null && _b !== void 0 ? _b : ".");
+    parentDir = path2.dirname((_b = (_a = module.parent) === null || _a === void 0 ? void 0 : _a.filename) !== null && _b !== void 0 ? _b : ".");
   } catch (_c) {
   }
   const checkValueType = (key, value) => {
@@ -9502,8 +9503,8 @@ var onetimeExports = onetime$1.exports;
     }
   }
   exports.default = Conf2;
-  module2.exports = Conf2;
-  module2.exports.default = Conf2;
+  module.exports = Conf2;
+  module.exports.default = Conf2;
 })(source, source.exports);
 var sourceExports = source.exports;
 const path = path$6;
@@ -9599,19 +9600,13 @@ const DEFAULT_SETTINGS = {
   enableLogging: false,
   theme: "light",
   customization: DEFAULT_CUSTOMIZATION,
-  excludedApps: [],
-  excludedAppsViewMode: "list",
-  lastAppScan: 0,
-  appScanInterval: 30,
-  // Default to 30 days
-  installedApps: [],
   standUpEnabled: false,
   standUpInterval: 30,
   // Default to 30 minutes
   standUpPosition: "center-center",
   preLockWarningEnabled: false,
-  preLockWarningMinutes: 5
-  // Warn 5 minutes before lock
+  preLockReminders: [5],
+  preLockSkipEnabled: false
 };
 class SettingsStore {
   store;
@@ -9651,32 +9646,6 @@ class SettingsStore {
           type: "object",
           default: DEFAULT_SETTINGS.customization
         },
-        excludedApps: {
-          type: "array",
-          items: {
-            type: "string"
-          },
-          default: DEFAULT_SETTINGS.excludedApps || []
-        },
-        excludedAppsViewMode: {
-          type: "string",
-          enum: ["list", "grid"],
-          default: DEFAULT_SETTINGS.excludedAppsViewMode || "list"
-        },
-        lastAppScan: {
-          type: "number",
-          default: DEFAULT_SETTINGS.lastAppScan || 0
-        },
-        appScanInterval: {
-          type: "number",
-          default: DEFAULT_SETTINGS.appScanInterval || 30,
-          minimum: 0,
-          maximum: 30
-        },
-        installedApps: {
-          type: "array",
-          default: DEFAULT_SETTINGS.installedApps || []
-        },
         standUpEnabled: {
           type: "boolean",
           default: DEFAULT_SETTINGS.standUpEnabled ?? false
@@ -9706,11 +9675,14 @@ class SettingsStore {
           type: "boolean",
           default: DEFAULT_SETTINGS.preLockWarningEnabled ?? false
         },
-        preLockWarningMinutes: {
-          type: "number",
-          default: DEFAULT_SETTINGS.preLockWarningMinutes ?? 5,
-          minimum: 1,
-          maximum: 30
+        preLockReminders: {
+          type: "array",
+          items: { type: "number", enum: [1, 3, 5] },
+          default: DEFAULT_SETTINGS.preLockReminders ?? [5]
+        },
+        preLockSkipEnabled: {
+          type: "boolean",
+          default: DEFAULT_SETTINGS.preLockSkipEnabled ?? false
         }
       },
       defaults: DEFAULT_SETTINGS,
@@ -9726,16 +9698,12 @@ class SettingsStore {
       enableLogging: this.store.get("enableLogging"),
       theme: this.store.get("theme") || "light",
       customization: this.store.get("customization") || DEFAULT_SETTINGS.customization,
-      excludedApps: this.store.get("excludedApps", DEFAULT_SETTINGS.excludedApps || []),
-      excludedAppsViewMode: this.store.get("excludedAppsViewMode", DEFAULT_SETTINGS.excludedAppsViewMode || "list"),
-      lastAppScan: this.store.get("lastAppScan", DEFAULT_SETTINGS.lastAppScan || 0),
-      appScanInterval: this.store.get("appScanInterval", DEFAULT_SETTINGS.appScanInterval || 30),
-      installedApps: this.store.get("installedApps", DEFAULT_SETTINGS.installedApps || []),
       standUpEnabled: this.store.get("standUpEnabled", DEFAULT_SETTINGS.standUpEnabled ?? false),
       standUpInterval: this.store.get("standUpInterval", DEFAULT_SETTINGS.standUpInterval ?? 30),
       standUpPosition: this.store.get("standUpPosition", DEFAULT_SETTINGS.standUpPosition ?? "center-center"),
       preLockWarningEnabled: this.store.get("preLockWarningEnabled", DEFAULT_SETTINGS.preLockWarningEnabled ?? false),
-      preLockWarningMinutes: this.store.get("preLockWarningMinutes", DEFAULT_SETTINGS.preLockWarningMinutes ?? 5)
+      preLockReminders: this.store.get("preLockReminders", DEFAULT_SETTINGS.preLockReminders ?? [5]),
+      preLockSkipEnabled: this.store.get("preLockSkipEnabled", DEFAULT_SETTINGS.preLockSkipEnabled ?? false)
     };
   }
   setSettings(settings) {
@@ -9771,19 +9739,19 @@ function getAppAssetPath(isDirname, relativePath) {
   const appMediaPath = getAppMediaPath(isDirname);
   return path$6.join(appMediaPath, relativePath);
 }
-const logger$8 = new Logger("lock-window");
+const logger$7 = new Logger("lock-window");
 class LockWindow {
   windows = [];
   displayBounds = /* @__PURE__ */ new Map();
   create(lockDurationMs, showSkipButton) {
-    logger$8.info(`Creating lock windows with duration: ${lockDurationMs}ms, showSkipButton: ${showSkipButton}`);
+    logger$7.info(`Creating lock windows with duration: ${lockDurationMs}ms, showSkipButton: ${showSkipButton}`);
     const displays = require$$1.screen.getAllDisplays();
-    logger$8.info(`Found ${displays.length} display(s)`);
+    logger$7.info(`Found ${displays.length} display(s)`);
     const iconPath = getAppAssetPath(__dirname, "Wave--icon.png");
     displays.forEach((display, index) => {
       const { x, y, width, height } = display.bounds;
       const isPrimary = display.id === require$$1.screen.getPrimaryDisplay().id;
-      logger$8.info(
+      logger$7.info(
         `Display ${index}: x=${x}, y=${y}, width=${width}, height=${height}, isPrimary=${isPrimary}, displayId=${display.id}`
       );
       const window2 = new require$$1.BrowserWindow({
@@ -9834,7 +9802,7 @@ class LockWindow {
           showSkipButton,
           startTime: Date.now()
         });
-        logger$8.info(`Positioning window ${index} at x=${x}, y=${y}, width=${width}, height=${height}`);
+        logger$7.info(`Positioning window ${index} at x=${x}, y=${y}, width=${width}, height=${height}`);
         window2.setAlwaysOnTop(true, "screen-saver", 1);
         window2.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
         window2.setFullScreenable(false);
@@ -9850,11 +9818,11 @@ class LockWindow {
         }
         setTimeout(() => {
           const finalBounds = window2.getBounds();
-          logger$8.info(
+          logger$7.info(
             `Final window ${index} bounds: x=${finalBounds.x}, y=${finalBounds.y}, width=${finalBounds.width}, height=${finalBounds.height}`
           );
           if (finalBounds.x !== x || finalBounds.y !== y) {
-            logger$8.warn(
+            logger$7.warn(
               `Window ${index} position mismatch! Expected (${x},${y}) but got (${finalBounds.x},${finalBounds.y}). Forcing position...`
             );
             window2.setBounds({ x, y, width, height }, false);
@@ -9878,7 +9846,7 @@ class LockWindow {
         const currentBounds = window2.getBounds();
         const intendedBounds = this.displayBounds.get(window2);
         if (intendedBounds && (currentBounds.x !== intendedBounds.x || currentBounds.y !== intendedBounds.y)) {
-          logger$8.warn(
+          logger$7.warn(
             `Window ${index} drifted! Repositioning from (${currentBounds.x},${currentBounds.y}) to (${intendedBounds.x},${intendedBounds.y})`
           );
           window2.setBounds(intendedBounds, false);
@@ -9889,7 +9857,7 @@ class LockWindow {
     return this.windows[0];
   }
   close() {
-    logger$8.info(`Closing ${this.windows.length} lock window(s)`);
+    logger$7.info(`Closing ${this.windows.length} lock window(s)`);
     const windowsToClose = [...this.windows];
     this.windows = [];
     this.displayBounds.clear();
@@ -9899,7 +9867,7 @@ class LockWindow {
         window2.destroy();
       }
     });
-    logger$8.info("All lock windows closed");
+    logger$7.info("All lock windows closed");
   }
   isOpen() {
     return this.windows.length > 0 && this.windows.some((w) => !w.isDestroyed());
@@ -9915,51 +9883,60 @@ class LockWindow {
     });
   }
 }
-const logger$7 = new Logger("pre-lock-window");
-const WINDOW_WIDTH$1 = 380;
-const WINDOW_HEIGHT$1 = 130;
+function createOverlayWindow(dirname, options) {
+  const iconPath = getAppAssetPath(dirname, "Wave--icon.png");
+  const win = new require$$1.BrowserWindow({
+    width: options.width,
+    height: options.height,
+    frame: false,
+    transparent: true,
+    backgroundColor: "#00000000",
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    resizable: false,
+    movable: false,
+    minimizable: false,
+    maximizable: false,
+    focusable: true,
+    hasShadow: false,
+    show: false,
+    webPreferences: {
+      preload: path$6.join(dirname, "../preload/index.js"),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true
+    },
+    icon: iconPath,
+    title: options.title
+  });
+  win.setAlwaysOnTop(true, "screen-saver", 1);
+  if (is.dev && process.env["ELECTRON_RENDERER_URL"]) {
+    win.loadURL(`${process.env["ELECTRON_RENDERER_URL"]}?${options.queryParams}`);
+  } else {
+    win.loadURL(`file://${path$6.join(dirname, "../renderer/index.html")}?${options.queryParams}`);
+  }
+  return win;
+}
+const logger$6 = new Logger("pre-lock-window");
+const WINDOW_WIDTH$1 = 420;
+const WINDOW_HEIGHT$1 = 200;
 class PreLockWindow {
   win = null;
-  show(warningMinutes) {
+  show(warningMinutes, showSkip = false) {
     if (this.win && !this.win.isDestroyed()) {
       return;
     }
-    const iconPath = getAppAssetPath(__dirname, "Wave--icon.png");
-    this.win = new require$$1.BrowserWindow({
+    this.win = createOverlayWindow(__dirname, {
       width: WINDOW_WIDTH$1,
       height: WINDOW_HEIGHT$1,
-      frame: false,
-      transparent: true,
-      backgroundColor: "#00000000",
-      alwaysOnTop: true,
-      skipTaskbar: true,
-      resizable: false,
-      movable: false,
-      minimizable: false,
-      maximizable: false,
-      focusable: true,
-      hasShadow: false,
-      show: false,
-      webPreferences: {
-        preload: path$6.join(__dirname, "../preload/index.js"),
-        contextIsolation: true,
-        nodeIntegration: false,
-        sandbox: true
-      },
-      icon: iconPath,
-      title: "WAVE - Lock Warning"
+      title: "WAVE - Lock Warning",
+      queryParams: `mode=prelock&minutes=${warningMinutes}&showSkip=${showSkip}`
     });
-    this.win.setAlwaysOnTop(true, "screen-saver", 1);
-    if (is.dev && process.env["ELECTRON_RENDERER_URL"]) {
-      this.win.loadURL(`${process.env["ELECTRON_RENDERER_URL"]}?mode=prelock&minutes=${warningMinutes}`);
-    } else {
-      this.win.loadURL(`file://${path$6.join(__dirname, "../renderer/index.html")}?mode=prelock&minutes=${warningMinutes}`);
-    }
     this.win.webContents.on("did-finish-load", () => {
       if (!this.win || this.win.isDestroyed()) return;
       this.win.center();
       this.win.show();
-      logger$7.info(`Pre-lock warning window shown (${warningMinutes}m before lock)`);
+      logger$6.info(`Pre-lock warning window shown (${warningMinutes}m before lock)`);
     });
     this.win.on("closed", () => {
       this.win = null;
@@ -9970,32 +9947,28 @@ class PreLockWindow {
       this.win.removeAllListeners("close");
       this.win.close();
       this.win = null;
-      logger$7.info("Pre-lock warning window closed");
+      logger$6.info("Pre-lock warning window closed");
     }
   }
   isOpen() {
     return this.win !== null && !this.win.isDestroyed();
   }
 }
-const logger$6 = new Logger("cycle-manager");
+const logger$5 = new Logger("cycle-manager");
 class CycleManager {
   settings;
   state;
   intervalId = null;
-  mainWindow = null;
+  getMainWindow;
   systemWasAsleep = false;
   lockWindow;
   preLockWindow;
-  preLockWarningFired = false;
-  appMonitor = null;
-  wasAutoPaused = false;
-  // Track if cycle was auto-paused due to app activity
-  constructor(settings, mainWindow2, appMonitor2) {
+  firedReminders = /* @__PURE__ */ new Set();
+  constructor(settings, getMainWindow) {
     this.settings = settings;
-    this.mainWindow = mainWindow2;
+    this.getMainWindow = getMainWindow;
     this.lockWindow = new LockWindow();
     this.preLockWindow = new PreLockWindow();
-    this.appMonitor = appMonitor2 || null;
     this.state = {
       phase: "work",
       workStartedAt: null,
@@ -10005,10 +9978,10 @@ class CycleManager {
     };
   }
   start() {
-    logger$6.info("Cycle started");
+    logger$5.info("Cycle started");
     this.state.workStartedAt = Date.now();
     this.state.phase = "work";
-    this.preLockWarningFired = false;
+    this.firedReminders.clear();
     if (this.intervalId) {
       clearInterval(this.intervalId);
     }
@@ -10021,11 +9994,11 @@ class CycleManager {
       clearInterval(this.intervalId);
       this.intervalId = null;
     }
-    logger$6.info("Cycle stopped");
+    logger$5.info("Cycle stopped");
   }
   pause() {
     if (this.state.phase === "paused") {
-      logger$6.warn("Already paused");
+      logger$5.warn("Already paused");
       return;
     }
     const status = this.getStatus();
@@ -10033,11 +10006,11 @@ class CycleManager {
     this.state.pausedAt = Date.now();
     this.state.phase = "paused";
     this.emit("cycle:phase-changed", "paused");
-    logger$6.info(`Cycle paused. Remaining: ${this.state.pausedRemaining}ms`);
+    logger$5.info(`Cycle paused. Remaining: ${this.state.pausedRemaining}ms`);
   }
   resume() {
     if (this.state.phase !== "paused") {
-      logger$6.warn("Not paused");
+      logger$5.warn("Not paused");
       return;
     }
     const now = Date.now();
@@ -10050,28 +10023,28 @@ class CycleManager {
     this.state.pausedAt = null;
     this.state.pausedRemaining = 0;
     this.emit("cycle:phase-changed", "work");
-    logger$6.info(`Cycle resumed with ${remainingMs}ms remaining`);
+    logger$5.info(`Cycle resumed with ${remainingMs}ms remaining`);
   }
   async lockNow() {
-    logger$6.info("Lock requested immediately");
+    logger$5.info("Lock requested immediately");
     this.state.phase = "locking";
     await this.executeLock();
   }
   updateSettings(newSettings) {
     this.settings = newSettings;
-    logger$6.info(
+    logger$5.info(
       `Settings updated: work=${newSettings.workHours}h, lock=${newSettings.lockMinutes}m, showSkipButton=${newSettings.showSkipButton}`
     );
   }
   onSystemSuspend() {
-    logger$6.info("System suspended, cycle paused");
+    logger$5.info("System suspended, cycle paused");
     this.systemWasAsleep = true;
     if (this.state.phase !== "paused") {
       this.pause();
     }
   }
   onSystemResume() {
-    logger$6.info("System resumed, resuming cycle");
+    logger$5.info("System resumed, resuming cycle");
     if (this.systemWasAsleep) {
       this.systemWasAsleep = false;
       this.resume();
@@ -10079,7 +10052,6 @@ class CycleManager {
   }
   tick() {
     const status = this.getStatus();
-    this.checkExcludedApps();
     this.emit("cycle:update", {
       phase: this.state.phase,
       remainingMs: status.remainingMs,
@@ -10096,14 +10068,24 @@ class CycleManager {
   }
   handleWorkPhase(remainingMs) {
     const warningEnabled = this.settings.preLockWarningEnabled ?? false;
-    const warningMinutes = this.settings.preLockWarningMinutes ?? 5;
-    if (warningEnabled && !this.preLockWarningFired && remainingMs > 0 && remainingMs <= warningMinutes * 60 * 1e3) {
-      this.preLockWarningFired = true;
-      this.preLockWindow.show(warningMinutes);
-      logger$6.info(`Pre-lock warning shown: ${warningMinutes}m before lock`);
+    const reminders = this.settings.preLockReminders ?? [5];
+    if (warningEnabled && remainingMs > 0) {
+      const sorted = [...reminders].sort((a, b) => b - a);
+      const lastMinute = Math.min(...reminders);
+      for (const minutes of sorted) {
+        if (!this.firedReminders.has(minutes) && remainingMs <= minutes * 60 * 1e3) {
+          this.firedReminders.add(minutes);
+          this.preLockWindow.close();
+          const isLast = minutes === lastMinute;
+          const showSkip = isLast && (this.settings.preLockSkipEnabled ?? false);
+          this.preLockWindow.show(minutes, showSkip);
+          logger$5.info(`Pre-lock reminder shown: ${minutes}m before lock (last=${isLast}, skip=${showSkip})`);
+          break;
+        }
+      }
     }
     if (remainingMs <= 0) {
-      logger$6.info("Work time elapsed, locking immediately");
+      logger$5.info("Work time elapsed, locking immediately");
       this.state.phase = "locking";
       this.executeLock();
     }
@@ -10113,18 +10095,18 @@ class CycleManager {
       this.lockWindow.updateTimer(remainingMs);
     }
     if (remainingMs <= 0) {
-      logger$6.info("Break time elapsed, restarting work cycle");
+      logger$5.info("Break time elapsed, restarting work cycle");
       this.lockWindow.close();
       this.state.phase = "work";
       this.state.workStartedAt = Date.now();
       this.state.breakStartedAt = null;
-      this.preLockWarningFired = false;
+      this.firedReminders.clear();
       this.emit("cycle:phase-changed", "work");
     }
   }
   async executeLock() {
     try {
-      logger$6.info("Showing lock window...");
+      logger$5.info("Showing lock window...");
       this.preLockWindow.close();
       const lockDurationMs = this.settings.lockMinutes * 60 * 1e3;
       this.lockWindow.create(lockDurationMs, this.settings.showSkipButton);
@@ -10132,9 +10114,9 @@ class CycleManager {
       this.state.breakStartedAt = Date.now();
       this.state.workStartedAt = null;
       this.emit("cycle:phase-changed", "break");
-      logger$6.info(`Break phase started (${this.settings.lockMinutes}m)`);
+      logger$5.info(`Break phase started (${this.settings.lockMinutes}m)`);
     } catch (err) {
-      logger$6.error("Failed to show lock window", err);
+      logger$5.error("Failed to show lock window", err);
     }
   }
   getStatus() {
@@ -10164,31 +10146,35 @@ class CycleManager {
   }
   skipLock() {
     if (this.state.phase !== "break") {
-      logger$6.warn(`Cannot skip: not in break phase (current phase: ${this.state.phase})`);
+      logger$5.warn(`Cannot skip: not in break phase (current phase: ${this.state.phase})`);
       return;
     }
-    logger$6.info("Lock skipped by user, closing windows and restarting work cycle");
+    logger$5.info("Lock skipped by user, closing windows and restarting work cycle");
     if (this.lockWindow.isOpen()) {
       this.lockWindow.close();
     }
     this.state.phase = "work";
     this.state.workStartedAt = Date.now();
     this.state.breakStartedAt = null;
-    this.preLockWarningFired = false;
+    this.firedReminders.clear();
     this.emit("cycle:phase-changed", "work");
-    logger$6.info("Work cycle restarted after skip");
+    logger$5.info("Work cycle restarted after skip");
   }
   closePreLockWarning() {
     this.preLockWindow.close();
   }
+  showPreLockWarning(minutes, showSkip = false) {
+    this.preLockWindow.show(minutes, showSkip);
+  }
   emit(channel, data) {
-    if (this.mainWindow && !this.mainWindow.isDestroyed()) {
-      this.mainWindow.webContents.send(channel, data);
+    const win = this.getMainWindow();
+    if (win && !win.isDestroyed()) {
+      win.webContents.send(channel, data);
     }
   }
   reset() {
     this.preLockWindow.close();
-    this.preLockWarningFired = false;
+    this.firedReminders.clear();
     this.state = {
       phase: "work",
       workStartedAt: Date.now(),
@@ -10197,647 +10183,7 @@ class CycleManager {
       pausedRemaining: 0
     };
     this.emit("cycle:phase-changed", "work");
-    logger$6.info("Cycle reset");
-  }
-  /**
-   * Check excluded apps and auto-pause/resume cycle accordingly
-   */
-  checkExcludedApps() {
-    if (!this.appMonitor || !this.settings.excludedApps || this.settings.excludedApps.length === 0) {
-      return;
-    }
-    if (this.state.phase === "break" || this.state.phase === "locking") {
-      return;
-    }
-    const shouldPause = this.appMonitor.shouldPauseCycle(this.settings.excludedApps);
-    if (shouldPause && this.state.phase !== "paused") {
-      logger$6.info("Auto-pausing cycle due to excluded app activity");
-      this.wasAutoPaused = true;
-      this.pause();
-    } else if (!shouldPause && this.state.phase === "paused" && this.wasAutoPaused) {
-      logger$6.info("Auto-resuming cycle as excluded app activity ended");
-      this.wasAutoPaused = false;
-      this.resume();
-    }
-  }
-}
-const execAsync = require$$1$2.promisify(child_process.exec);
-const logger$5 = new Logger("app-monitor");
-const MONITORED_APPS = [
-  // Communication Apps
-  {
-    id: "teams",
-    name: "Microsoft Teams",
-    processNames: ["ms-teams.exe", "Teams.exe"],
-    category: "communication"
-  },
-  {
-    id: "zoom",
-    name: "Zoom",
-    processNames: ["Zoom.exe", "ZoomWebinar.exe"],
-    category: "communication"
-  },
-  {
-    id: "skype",
-    name: "Skype",
-    processNames: ["Skype.exe"],
-    category: "communication"
-  },
-  {
-    id: "google-meet",
-    name: "Google Meet",
-    processNames: ["meet.exe", "GoogleMeet.exe"],
-    category: "communication"
-  },
-  {
-    id: "webex",
-    name: "Cisco Webex",
-    processNames: ["CiscoCollabHost.exe", "ptoneclk.exe", "WebexHost.exe"],
-    category: "communication"
-  },
-  {
-    id: "discord",
-    name: "Discord",
-    processNames: ["Discord.exe"],
-    category: "communication"
-  },
-  {
-    id: "slack",
-    name: "Slack",
-    processNames: ["slack.exe"],
-    category: "communication"
-  },
-  {
-    id: "whatsapp",
-    name: "WhatsApp Desktop",
-    processNames: ["WhatsApp.exe"],
-    category: "communication"
-  },
-  {
-    id: "telegram",
-    name: "Telegram Desktop",
-    processNames: ["Telegram.exe"],
-    category: "communication"
-  },
-  {
-    id: "signal",
-    name: "Signal Desktop",
-    processNames: ["Signal.exe"],
-    category: "communication"
-  },
-  {
-    id: "viber",
-    name: "Viber Desktop",
-    processNames: ["Viber.exe"],
-    category: "communication"
-  },
-  {
-    id: "messenger",
-    name: "Facebook Messenger Desktop",
-    processNames: ["Messenger.exe"],
-    category: "communication"
-  },
-  {
-    id: "line",
-    name: "LINE",
-    processNames: ["LINE.exe"],
-    category: "communication"
-  },
-  {
-    id: "wechat",
-    name: "WeChat",
-    processNames: ["WeChat.exe", "WeChatApp.exe"],
-    category: "communication"
-  },
-  {
-    id: "zoom-workplace",
-    name: "Zoom Workplace",
-    processNames: ["ZoomWorkplace.exe"],
-    category: "communication"
-  },
-  // Media Players
-  {
-    id: "vlc",
-    name: "VLC Media Player",
-    processNames: ["vlc.exe"],
-    category: "media"
-  },
-  {
-    id: "windows-media-player",
-    name: "Windows Media Player",
-    processNames: ["wmplayer.exe"],
-    category: "media"
-  },
-  {
-    id: "movies-tv",
-    name: "Movies & TV",
-    processNames: ["Video.UI.exe"],
-    category: "media"
-  },
-  {
-    id: "potplayer",
-    name: "PotPlayer",
-    processNames: ["PotPlayer.exe", "PotPlayerMini.exe", "PotPlayer64.exe", "PotPlayerMini64.exe"],
-    category: "media"
-  },
-  {
-    id: "kmplayer",
-    name: "KMPlayer",
-    processNames: ["KMPlayer.exe", "KMPlayer64.exe"],
-    category: "media"
-  },
-  {
-    id: "mpc-hc",
-    name: "MPC-HC",
-    processNames: ["mpc-hc.exe", "mpc-hc64.exe"],
-    category: "media"
-  },
-  {
-    id: "mpc-be",
-    name: "MPC-BE",
-    processNames: ["mpc-be.exe", "mpc-be64.exe"],
-    category: "media"
-  },
-  {
-    id: "kodi",
-    name: "Kodi",
-    processNames: ["kodi.exe"],
-    category: "media"
-  },
-  {
-    id: "plex-player",
-    name: "Plex Media Player",
-    processNames: ["PlexMediaPlayer.exe"],
-    category: "media"
-  },
-  {
-    id: "plex-htpc",
-    name: "Plex HTPC",
-    processNames: ["PlexHTPC.exe"],
-    category: "media"
-  },
-  {
-    id: "netflix",
-    name: "Netflix",
-    processNames: ["Netflix.exe"],
-    category: "media"
-  },
-  {
-    id: "prime-video",
-    name: "Amazon Prime Video",
-    processNames: ["PrimeVideo.exe", "AmazonPrimeVideo.exe"],
-    category: "media"
-  },
-  {
-    id: "disney-plus",
-    name: "Disney+",
-    processNames: ["DisneyPlus.exe"],
-    category: "media"
-  },
-  {
-    id: "youtube",
-    name: "YouTube",
-    processNames: ["YouTube.exe"],
-    category: "media"
-  },
-  {
-    id: "twitch",
-    name: "Twitch",
-    processNames: ["Twitch.exe"],
-    category: "media"
-  },
-  {
-    id: "spotify",
-    name: "Spotify",
-    processNames: ["Spotify.exe"],
-    category: "media"
-  },
-  {
-    id: "itunes",
-    name: "iTunes",
-    processNames: ["iTunes.exe"],
-    category: "media"
-  },
-  {
-    id: "realplayer",
-    name: "RealPlayer",
-    processNames: ["RealPlayer.exe"],
-    category: "media"
-  },
-  // Browsers
-  {
-    id: "chrome",
-    name: "Google Chrome",
-    processNames: ["chrome.exe"],
-    category: "browser"
-  },
-  {
-    id: "edge",
-    name: "Microsoft Edge",
-    processNames: ["msedge.exe"],
-    category: "browser"
-  },
-  {
-    id: "firefox",
-    name: "Mozilla Firefox",
-    processNames: ["firefox.exe"],
-    category: "browser"
-  },
-  {
-    id: "opera",
-    name: "Opera",
-    processNames: ["opera.exe"],
-    category: "browser"
-  },
-  {
-    id: "opera-gx",
-    name: "Opera GX",
-    processNames: ["opera_gx.exe"],
-    category: "browser"
-  },
-  {
-    id: "brave",
-    name: "Brave Browser",
-    processNames: ["brave.exe"],
-    category: "browser"
-  },
-  // Media Creation & Gaming
-  {
-    id: "obs",
-    name: "OBS Studio",
-    processNames: ["obs64.exe", "obs32.exe", "obs.exe"],
-    category: "media"
-  },
-  {
-    id: "steam",
-    name: "Steam",
-    processNames: ["steam.exe", "steamwebhelper.exe"],
-    category: "media"
-  },
-  {
-    id: "xbox",
-    name: "Xbox App",
-    processNames: ["XboxApp.exe", "GamingServices.exe"],
-    category: "media"
-  },
-  {
-    id: "geforce-experience",
-    name: "NVIDIA GeForce Experience",
-    processNames: ["NVIDIA GeForce Experience.exe", "NvContainer.exe"],
-    category: "media"
-  },
-  {
-    id: "shadowplay",
-    name: "ShadowPlay",
-    processNames: ["NvContainer.exe", "NVIDIA Share.exe"],
-    category: "media"
-  }
-];
-class AppMonitor {
-  intervalId = null;
-  currentStates = /* @__PURE__ */ new Map();
-  installedApps = [];
-  checkIntervalMs = 5e3;
-  // Check every 5 seconds for active state
-  onStateChangeCallback = null;
-  onScanCompleteCallback = null;
-  constructor() {
-    MONITORED_APPS.forEach((app2) => {
-      this.currentStates.set(app2.id, {
-        appId: app2.id,
-        isRunning: false,
-        isInCall: false,
-        isFullscreen: false
-      });
-    });
-  }
-  /**
-   * Start monitoring applications (only checks active states, not installation)
-   */
-  start() {
-    if (this.intervalId) {
-      logger$5.warn("App monitor already running");
-      return;
-    }
-    logger$5.info("Starting app monitor for active state checking");
-    this.checkAllApps();
-    this.intervalId = setInterval(() => {
-      this.checkAllApps();
-    }, this.checkIntervalMs);
-  }
-  /**
-   * Stop monitoring applications
-   */
-  stop() {
-    if (this.intervalId) {
-      clearInterval(this.intervalId);
-      this.intervalId = null;
-      logger$5.info("App monitor stopped");
-    }
-  }
-  /**
-   * Set callback for state changes
-   */
-  onStateChange(callback) {
-    this.onStateChangeCallback = callback;
-  }
-  /**
-   * Set callback for when app scan is complete
-   */
-  onScanComplete(callback) {
-    this.onScanCompleteCallback = callback;
-  }
-  /**
-   * Get current state of all monitored apps
-   */
-  getStates() {
-    return Array.from(this.currentStates.values());
-  }
-  /**
-   * Scan for installed apps on the system
-   * This is an expensive operation and should be called sparingly
-   */
-  async scanInstalledApps() {
-    logger$5.info("Scanning for installed applications...");
-    const installed = [];
-    for (const app2 of MONITORED_APPS) {
-      const isInstalled = await this.isAppInstalled(app2);
-      if (isInstalled) {
-        installed.push(app2);
-        logger$5.info(`Found installed app: ${app2.name}`);
-      }
-    }
-    this.installedApps = installed;
-    logger$5.info(`Scan complete. Found ${installed.length} installed apps`);
-    if (this.onScanCompleteCallback) {
-      this.onScanCompleteCallback(installed);
-    }
-    return installed;
-  }
-  /**
-   * Load installed apps from cached data without scanning
-   */
-  loadInstalledApps(apps) {
-    this.installedApps = apps.map((app2) => ({
-      id: app2.id,
-      name: app2.name,
-      processNames: app2.processNames,
-      category: app2.category
-    }));
-    logger$5.info(`Loaded ${this.installedApps.length} apps from cache`);
-  }
-  /**
-   * Get list of installed apps (cached)
-   */
-  getInstalledApps() {
-    return this.installedApps;
-  }
-  /**
-   * Check if an app is installed on the system
-   */
-  async isAppInstalled(app2) {
-    try {
-      const searchTerms = [app2.name.split(" ")[0], ...app2.processNames.map((p) => p.replace(".exe", ""))];
-      for (const term of searchTerms) {
-        const registryCheck = await execAsync(
-          `powershell -Command "Get-ItemProperty HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\* -ErrorAction SilentlyContinue | Where-Object {$_.DisplayName -like '*${term}*'} | Select-Object -First 1"`,
-          { windowsHide: true, timeout: 3e3 }
-        ).catch(() => ({ stdout: "" }));
-        if (registryCheck.stdout.trim().length > 0) {
-          return true;
-        }
-      }
-      for (const term of searchTerms) {
-        const registry32Check = await execAsync(
-          `powershell -Command "Get-ItemProperty HKLM:\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\* -ErrorAction SilentlyContinue | Where-Object {$_.DisplayName -like '*${term}*'} | Select-Object -First 1"`,
-          { windowsHide: true, timeout: 3e3 }
-        ).catch(() => ({ stdout: "" }));
-        if (registry32Check.stdout.trim().length > 0) {
-          return true;
-        }
-      }
-      for (const term of searchTerms) {
-        const userRegistryCheck = await execAsync(
-          `powershell -Command "Get-ItemProperty HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\* -ErrorAction SilentlyContinue | Where-Object {$_.DisplayName -like '*${term}*'} | Select-Object -First 1"`,
-          { windowsHide: true, timeout: 3e3 }
-        ).catch(() => ({ stdout: "" }));
-        if (userRegistryCheck.stdout.trim().length > 0) {
-          return true;
-        }
-      }
-      for (const procName of app2.processNames) {
-        try {
-          const whereCheck = await execAsync(`where ${procName}`, {
-            windowsHide: true,
-            timeout: 2e3
-          });
-          if (whereCheck.stdout.trim().length > 0) {
-            return true;
-          }
-        } catch {
-        }
-      }
-      const commonPaths = [
-        `C:\\Program Files\\${app2.name}`,
-        `C:\\Program Files (x86)\\${app2.name}`,
-        `${process.env.LOCALAPPDATA || "C:\\Users\\Public\\AppData\\Local"}\\${app2.name}`,
-        `${process.env.APPDATA || "C:\\Users\\Public\\AppData\\Roaming"}\\${app2.name}`
-      ];
-      for (const dirPath of commonPaths) {
-        try {
-          const dirCheck = await execAsync(`powershell -Command "Test-Path '${dirPath}'"`, {
-            windowsHide: true,
-            timeout: 1e3
-          });
-          if (dirCheck.stdout.trim() === "True") {
-            return true;
-          }
-        } catch {
-        }
-      }
-      return false;
-    } catch (error2) {
-      logger$5.debug(`Error checking if ${app2.name} is installed: ${error2.message}`);
-      return false;
-    }
-  }
-  /**
-  * Check if any excluded apps are in active state (call or fullscreen)
-  */
-  shouldPauseCycle(excludedAppIds) {
-    for (const appId of excludedAppIds) {
-      const state = this.currentStates.get(appId);
-      if (state && state.isRunning && (state.isInCall || state.isFullscreen)) {
-        logger$5.info(`App ${appId} is in active state (call: ${state.isInCall}, fullscreen: ${state.isFullscreen})`);
-        return true;
-      }
-    }
-    return false;
-  }
-  /**
-   * Check all installed apps for active state
-   */
-  async checkAllApps() {
-    const appsToCheck = this.installedApps.length > 0 ? this.installedApps : MONITORED_APPS;
-    const promises = appsToCheck.map((app2) => this.checkApp(app2));
-    await Promise.all(promises);
-    if (this.onStateChangeCallback) {
-      this.onStateChangeCallback(this.getStates());
-    }
-  }
-  /**
-   * Check a specific app's state
-   */
-  async checkApp(app2) {
-    const prevState = this.currentStates.get(app2.id);
-    const newState = {
-      appId: app2.id,
-      isRunning: false,
-      isInCall: false,
-      isFullscreen: false
-    };
-    try {
-      newState.isRunning = await this.isProcessRunning(app2.processNames);
-      if (newState.isRunning) {
-        if (app2.category === "communication") {
-          newState.isInCall = await this.checkIfInCall(app2);
-        } else if (app2.category === "media" || app2.category === "browser") {
-          newState.isFullscreen = await this.checkIfFullscreen(app2);
-        }
-      }
-    } catch (error2) {
-      logger$5.error(`Error checking app ${app2.name}`, error2);
-    }
-    if (!prevState || prevState.isRunning !== newState.isRunning || prevState.isInCall !== newState.isInCall || prevState.isFullscreen !== newState.isFullscreen) {
-      this.currentStates.set(app2.id, newState);
-      logger$5.debug(
-        `App state changed: ${app2.name} - running: ${newState.isRunning}, inCall: ${newState.isInCall}, fullscreen: ${newState.isFullscreen}`
-      );
-    }
-  }
-  /**
-   * Check if any of the process names are running
-   */
-  async isProcessRunning(processNames) {
-    try {
-      const { stdout } = await execAsync("tasklist", { windowsHide: true });
-      const processes = stdout.toLowerCase();
-      return processNames.some((procName) => processes.includes(procName.toLowerCase()));
-    } catch (error2) {
-      logger$5.error("Error checking running processes", error2);
-      return false;
-    }
-  }
-  /**
-   * Check if communication app is in a call
-   * Uses heuristics: checks for specific window titles or process behavior
-   */
-  async checkIfInCall(app2) {
-    try {
-      if (app2.id === "teams") {
-        const { stdout } = await execAsync(
-          `powershell -Command "Get-Process | Where-Object {$_.ProcessName -match 'Teams' -and ($_.MainWindowTitle -match '\\| Microsoft Teams$' -or $_.MainWindowTitle -match 'Meeting in progress' -or $_.MainWindowTitle -match 'Call in progress')} | Select-Object MainWindowTitle -First 1"`,
-          { windowsHide: true }
-        );
-        const result = stdout.trim().length > 0 && (stdout.includes("Meeting in progress") || stdout.includes("Call in progress"));
-        if (result) {
-          logger$5.debug(`Teams call detected: ${stdout.trim()}`);
-        }
-        return result;
-      }
-      if (app2.id === "zoom") {
-        const { stdout } = await execAsync(
-          `powershell -Command "Get-Process zoom | Where-Object {$_.MainWindowTitle -like '*Zoom Meeting*'} | Select-Object -First 1"`,
-          { windowsHide: true }
-        );
-        return stdout.trim().length > 0;
-      }
-      if (app2.id === "discord") {
-        const { stdout } = await execAsync(
-          `powershell -Command "Get-Process discord | Where-Object {$_.MainWindowTitle -like '* - Voice*' -or $_.MainWindowTitle -like '* - Video*'} | Select-Object -First 1"`,
-          { windowsHide: true }
-        );
-        return stdout.trim().length > 0;
-      }
-      return false;
-    } catch (error2) {
-      logger$5.debug(`Cannot determine call state for ${app2.name}: ${error2.message}`);
-      return false;
-    }
-  }
-  async checkIfFullscreen(app2) {
-    try {
-      const fs2 = await import("fs/promises");
-      const path2 = await import("path");
-      const os2 = await import("os");
-      const tempDir = os2.tmpdir();
-      const scriptPath = path2.join(tempDir, `wave-fullscreen-check-${Date.now()}.ps1`);
-      const scriptContent = `Add-Type @"
-using System;
-using System.Runtime.InteropServices;
-public class WinAPI {
-    [DllImport("user32.dll")]
-    public static extern IntPtr GetForegroundWindow();
-    [DllImport("user32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
-    [DllImport("user32.dll")]
-    public static extern int GetSystemMetrics(int nIndex);
-    [DllImport("user32.dll")]
-    public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
-    [StructLayout(LayoutKind.Sequential)]
-    public struct RECT {
-        public int Left, Top, Right, Bottom;
-    }
-}
-"@
-
-$hwnd = [WinAPI]::GetForegroundWindow()
-$rect = New-Object WinAPI+RECT
-[WinAPI]::GetWindowRect($hwnd, [ref]$rect) | Out-Null
-$width = $rect.Right - $rect.Left
-$height = $rect.Bottom - $rect.Top
-$screenWidth = [WinAPI]::GetSystemMetrics(0)
-$screenHeight = [WinAPI]::GetSystemMetrics(1)
-$processId = 0
-[WinAPI]::GetWindowThreadProcessId($hwnd, [ref]$processId) | Out-Null
-$processName = (Get-Process -Id $processId -ErrorAction SilentlyContinue).ProcessName
-Write-Output "$width,$height,$screenWidth,$screenHeight,$processName"`;
-      await fs2.writeFile(scriptPath, scriptContent, "utf8");
-      try {
-        const { stdout } = await execAsync(`powershell -ExecutionPolicy Bypass -File "${scriptPath}"`, {
-          windowsHide: true,
-          timeout: 3e3
-        });
-        const parts = stdout.trim().split(",");
-        if (parts.length >= 5) {
-          const width = parseInt(parts[0]);
-          const height = parseInt(parts[1]);
-          const screenWidth = parseInt(parts[2]);
-          const screenHeight = parseInt(parts[3]);
-          const foregroundProcessName = parts[4].toLowerCase();
-          const isFullscreenSize = width >= screenWidth - 10 && height >= screenHeight - 10;
-          if (isFullscreenSize) {
-            for (const procName of app2.processNames) {
-              const cleanProcName = procName.replace(".exe", "").toLowerCase();
-              if (foregroundProcessName === cleanProcName) {
-                logger$5.info(
-                  `Fullscreen detected: ${app2.name} (${foregroundProcessName}) - ${width}x${height} on ${screenWidth}x${screenHeight}`
-                );
-                return true;
-              }
-            }
-          }
-        }
-        return false;
-      } finally {
-        await fs2.unlink(scriptPath).catch(() => {
-        });
-      }
-    } catch (error2) {
-      logger$5.debug(`Cannot determine fullscreen state for ${app2.name}: ${error2.message}`);
-      return false;
-    }
+    logger$5.info("Cycle reset");
   }
 }
 function validateSettingsInput(settings) {
@@ -10860,13 +10206,6 @@ function validateSettingsInput(settings) {
   }
   if (settings.enableLogging !== void 0 && typeof settings.enableLogging !== "boolean") {
     errors2.push("enableLogging must be a boolean");
-  }
-  if (settings.excludedApps !== void 0) {
-    if (!Array.isArray(settings.excludedApps)) {
-      errors2.push("excludedApps must be an array");
-    } else if (!settings.excludedApps.every((app2) => typeof app2 === "string")) {
-      errors2.push("excludedApps must be an array of strings");
-    }
   }
   if (settings.standUpEnabled !== void 0 && typeof settings.standUpEnabled !== "boolean") {
     errors2.push("standUpEnabled must be a boolean");
@@ -10893,10 +10232,17 @@ function validateSettingsInput(settings) {
   if (settings.preLockWarningEnabled !== void 0 && typeof settings.preLockWarningEnabled !== "boolean") {
     errors2.push("preLockWarningEnabled must be a boolean");
   }
-  if (settings.preLockWarningMinutes !== void 0) {
-    if (typeof settings.preLockWarningMinutes !== "number" || settings.preLockWarningMinutes < 1 || settings.preLockWarningMinutes > 30) {
-      errors2.push("preLockWarningMinutes must be between 1 and 30");
+  if (settings.preLockReminders !== void 0) {
+    if (!Array.isArray(settings.preLockReminders)) {
+      errors2.push("preLockReminders must be an array");
+    } else if (settings.preLockReminders.length > 3) {
+      errors2.push("preLockReminders can have at most 3 entries");
+    } else if (!settings.preLockReminders.every((v) => [1, 3, 5].includes(v))) {
+      errors2.push("preLockReminders values must be 1, 3, or 5");
     }
+  }
+  if (settings.preLockSkipEnabled !== void 0 && typeof settings.preLockSkipEnabled !== "boolean") {
+    errors2.push("preLockSkipEnabled must be a boolean");
   }
   return {
     valid: errors2.length === 0,
@@ -10924,8 +10270,19 @@ function getAutoStart() {
     return false;
   }
 }
+function getErrorMessage(err) {
+  return err instanceof Error ? err.message : "Unknown error";
+}
+async function dirExists(dirPath) {
+  try {
+    await fs$3.access(dirPath);
+    return true;
+  } catch {
+    return false;
+  }
+}
 const logger$3 = new Logger("ipc");
-function handleIPC(settingsStore2, cycleManager2, appMonitor2, standUpTimer2) {
+function handleIPC(settingsStore2, cycleManager2, standUpTimer2, getMainWindow) {
   require$$1.ipcMain.handle("settings:get", () => {
     return settingsStore2.getSettings();
   });
@@ -10979,9 +10336,37 @@ function handleIPC(settingsStore2, cycleManager2, appMonitor2, standUpTimer2) {
     standUpTimer2?.window.close();
     logger$3.info("Stand up window dismissed via IPC");
   });
+  require$$1.ipcMain.on("standup:test", () => {
+    const settings = settingsStore2.getSettings();
+    standUpTimer2?.window.show(settings.standUpPosition ?? "center-center");
+    logger$3.info("Stand up window triggered via test");
+  });
   require$$1.ipcMain.on("prelock:dismiss", () => {
     cycleManager2.closePreLockWarning();
     logger$3.info("Pre-lock warning dismissed via IPC");
+  });
+  require$$1.ipcMain.on("prelock:skip", () => {
+    cycleManager2.closePreLockWarning();
+    cycleManager2.reset();
+    const win = getMainWindow?.();
+    if (win && !win.isDestroyed()) {
+      const status = cycleManager2.getStatus();
+      win.webContents.send("cycle:phase-changed", status.phase);
+      win.webContents.send("cycle:update", {
+        phase: status.phase,
+        remainingMs: status.remainingMs,
+        totalMs: status.totalMs
+      });
+    }
+    logger$3.info("Current lock skipped via pre-lock warning");
+  });
+  require$$1.ipcMain.on("prelock:test", () => {
+    const settings = settingsStore2.getSettings();
+    const reminders = settings.preLockReminders ?? [5];
+    const lastMinute = Math.min(...reminders);
+    const showSkip = settings.preLockSkipEnabled ?? false;
+    cycleManager2.showPreLockWarning(lastMinute, showSkip);
+    logger$3.info("Pre-lock warning triggered via test");
   });
   require$$1.ipcMain.handle("autostart:get", () => {
     return getAutoStart();
@@ -11014,10 +10399,14 @@ function handleIPC(settingsStore2, cycleManager2, appMonitor2, standUpTimer2) {
   });
   require$$1.ipcMain.handle("app:openExternal", async (_event, url) => {
     try {
+      const parsed = new URL(url);
+      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+        throw new Error(`Blocked non-HTTP URL: ${parsed.protocol}`);
+      }
       await require$$1.shell.openExternal(url);
       logger$3.info(`Opened external URL: ${url}`);
     } catch (error2) {
-      const errorMsg = error2 instanceof Error ? error2.message : "Unknown error";
+      const errorMsg = getErrorMessage(error2);
       logger$3.error(`Failed to open external URL: ${url}`, new Error(errorMsg));
       throw error2;
     }
@@ -11028,7 +10417,7 @@ function handleIPC(settingsStore2, cycleManager2, appMonitor2, standUpTimer2) {
       await require$$1.shell.openPath(logsPath);
       logger$3.info("Opened logs folder");
     } catch (error2) {
-      const errorMsg = error2 instanceof Error ? error2.message : "Unknown error";
+      const errorMsg = getErrorMessage(error2);
       logger$3.error("Failed to open logs folder", new Error(errorMsg));
       throw error2;
     }
@@ -11036,18 +10425,18 @@ function handleIPC(settingsStore2, cycleManager2, appMonitor2, standUpTimer2) {
   require$$1.ipcMain.handle("logo:getAvailable", async () => {
     try {
       const mediaDir = path$6.join(require$$1.app.getPath("userData"), "media");
-      if (!fs$3.existsSync(mediaDir)) {
-        await fs$4.mkdir(mediaDir, { recursive: true });
+      if (!await dirExists(mediaDir)) {
+        await fs$3.mkdir(mediaDir, { recursive: true });
         return [];
       }
-      const files = await fs$4.readdir(mediaDir);
+      const files = await fs$3.readdir(mediaDir);
       const imageFiles = files.filter((file) => {
         const ext = path$6.extname(file).toLowerCase();
         return [".png", ".jpg", ".jpeg", ".svg", ".gif"].includes(ext);
       });
       return imageFiles.map((file) => `./${file}`);
     } catch (error2) {
-      const errorMsg = error2 instanceof Error ? error2.message : "Unknown error";
+      const errorMsg = getErrorMessage(error2);
       logger$3.error("Failed to get available media", new Error(errorMsg));
       return [];
     }
@@ -11065,15 +10454,15 @@ function handleIPC(settingsStore2, cycleManager2, appMonitor2, standUpTimer2) {
       const sourcePath = result.filePaths[0];
       const fileName = path$6.basename(sourcePath);
       const mediaDir = path$6.join(require$$1.app.getPath("userData"), "media");
-      if (!fs$3.existsSync(mediaDir)) {
-        await fs$4.mkdir(mediaDir, { recursive: true });
+      if (!await dirExists(mediaDir)) {
+        await fs$3.mkdir(mediaDir, { recursive: true });
       }
       const destPath = path$6.join(mediaDir, fileName);
-      await fs$4.copyFile(sourcePath, destPath);
+      await fs$3.copyFile(sourcePath, destPath);
       logger$3.info(`Logo uploaded: ${fileName}`);
       return { success: true, filename: `./${fileName}` };
     } catch (error2) {
-      const errorMsg = error2 instanceof Error ? error2.message : "Unknown error";
+      const errorMsg = getErrorMessage(error2);
       logger$3.error("Failed to upload logo", new Error(errorMsg));
       return { success: false, error: errorMsg };
     }
@@ -11090,74 +10479,15 @@ function handleIPC(settingsStore2, cycleManager2, appMonitor2, standUpTimer2) {
       logger$3.info(`Resolved ${relativePath} to ${resolved}`);
       return resolved;
     } catch (error2) {
-      const errorMsg = error2 instanceof Error ? error2.message : "Unknown error";
+      const errorMsg = getErrorMessage(error2);
       logger$3.error("Failed to resolve logo path", new Error(errorMsg));
       return relativePath;
     }
   });
-  require$$1.ipcMain.handle("apps:getAvailable", async () => {
-    if (!appMonitor2) {
-      logger$3.warn("App monitor not available");
-      return [];
-    }
-    try {
-      let apps = appMonitor2.getInstalledApps();
-      if (apps.length === 0) {
-        const settings = settingsStore2.getSettings();
-        if (settings.installedApps && settings.installedApps.length > 0) {
-          logger$3.info("Loading apps from settings cache");
-          appMonitor2.loadInstalledApps(settings.installedApps);
-          apps = appMonitor2.getInstalledApps();
-        }
-      }
-      return apps.map((app2) => ({ id: app2.id, name: app2.name, category: app2.category }));
-    } catch (error2) {
-      const errorMsg = error2 instanceof Error ? error2.message : "Unknown error";
-      logger$3.error("Failed to get available apps", new Error(errorMsg));
-      return [];
-    }
-  });
-  require$$1.ipcMain.handle("apps:scan", async () => {
-    if (!appMonitor2) {
-      logger$3.warn("App monitor not available");
-      return [];
-    }
-    try {
-      logger$3.info("Scanning for installed apps via IPC");
-      const apps = await appMonitor2.scanInstalledApps();
-      const appsData = apps.map((app2) => ({
-        id: app2.id,
-        name: app2.name,
-        category: app2.category,
-        processNames: app2.processNames
-      }));
-      settingsStore2.setSetting("installedApps", appsData);
-      settingsStore2.setSetting("lastAppScan", Date.now());
-      logger$3.info(`Saved ${apps.length} installed apps to settings via IPC`);
-      return apps.map((app2) => ({ id: app2.id, name: app2.name, category: app2.category }));
-    } catch (error2) {
-      const errorMsg = error2 instanceof Error ? error2.message : "Unknown error";
-      logger$3.error("Failed to scan apps", new Error(errorMsg));
-      return [];
-    }
-  });
-  require$$1.ipcMain.handle("apps:getStates", () => {
-    if (!appMonitor2) {
-      logger$3.warn("App monitor not available");
-      return [];
-    }
-    try {
-      return appMonitor2.getStates();
-    } catch (error2) {
-      const errorMsg = error2 instanceof Error ? error2.message : "Unknown error";
-      logger$3.error("Failed to get app states", new Error(errorMsg));
-      return [];
-    }
-  });
 }
 const logger$2 = new Logger("standup-window");
-const WINDOW_WIDTH = 380;
-const WINDOW_HEIGHT = 120;
+const WINDOW_WIDTH = 420;
+const WINDOW_HEIGHT = 160;
 const MARGIN = 20;
 const AUTO_CLOSE_MS = 8500;
 function getWindowPosition(position) {
@@ -11187,37 +10517,12 @@ class StandUpWindow {
     if (this.win && !this.win.isDestroyed()) {
       return;
     }
-    const iconPath = getAppAssetPath(__dirname, "Wave--icon.png");
-    this.win = new require$$1.BrowserWindow({
+    this.win = createOverlayWindow(__dirname, {
       width: WINDOW_WIDTH,
       height: WINDOW_HEIGHT,
-      frame: false,
-      transparent: true,
-      backgroundColor: "#00000000",
-      alwaysOnTop: true,
-      skipTaskbar: true,
-      resizable: false,
-      movable: false,
-      minimizable: false,
-      maximizable: false,
-      focusable: true,
-      hasShadow: false,
-      show: false,
-      webPreferences: {
-        preload: path$6.join(__dirname, "../preload/index.js"),
-        contextIsolation: true,
-        nodeIntegration: false,
-        sandbox: true
-      },
-      icon: iconPath,
-      title: "WAVE - Stand Up"
+      title: "WAVE - Stand Up",
+      queryParams: "mode=standup"
     });
-    this.win.setAlwaysOnTop(true, "screen-saver", 1);
-    if (is.dev && process.env["ELECTRON_RENDERER_URL"]) {
-      this.win.loadURL(`${process.env["ELECTRON_RENDERER_URL"]}?mode=standup`);
-    } else {
-      this.win.loadURL(`file://${path$6.join(__dirname, "../renderer/index.html")}?mode=standup`);
-    }
     this.win.webContents.on("did-finish-load", () => {
       if (!this.win || this.win.isDestroyed()) return;
       if (position === "center-center") {
@@ -11288,15 +10593,37 @@ class StandUpTimer {
     this.standUpWindow.close();
   }
 }
+function formatTrayTime(ms) {
+  const totalSeconds = Math.ceil(ms / 1e3);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor(totalSeconds % 3600 / 60);
+  const seconds = totalSeconds % 60;
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  } else if (minutes > 0) {
+    return `${minutes}m ${seconds}s`;
+  } else {
+    return `${seconds}s`;
+  }
+}
+require$$1.Menu.setApplicationMenu(null);
+async function fileExists(filePath) {
+  try {
+    await fs$3.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
 const logger = new Logger("main");
 let mainWindow = null;
 let splashWindow = null;
 let tray = null;
 const settingsStore = new SettingsStore();
 let cycleManager = null;
-let appMonitor = null;
 let standUpTimer = null;
 let isQuitting = false;
+let trayUpdateInterval = null;
 const createSplashWindow = () => {
   const iconPath = getAppAssetPath(__dirname, "Wave--icon.png");
   splashWindow = new require$$1.BrowserWindow({
@@ -11374,6 +10701,22 @@ const createWindow = () => {
       mainWindow?.hide();
     }
   });
+  mainWindow.webContents.session.setPermissionRequestHandler((_webContents, _permission, callback) => {
+    callback(false);
+  });
+  mainWindow.webContents.on("will-navigate", (event, navigationUrl) => {
+    const parsed = new URL(navigationUrl);
+    if (parsed.protocol !== "file:" && parsed.hostname !== "localhost") {
+      event.preventDefault();
+      logger.warn(`Blocked navigation to: ${navigationUrl}`);
+    }
+  });
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith("https://") || url.startsWith("http://")) {
+      require$$1.shell.openExternal(url);
+    }
+    return { action: "deny" };
+  });
   mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
     const headers = { ...details.responseHeaders };
     headers["Content-Security-Policy"] = [
@@ -11382,27 +10725,14 @@ const createWindow = () => {
     callback({ responseHeaders: headers });
   });
 };
-const formatTime = (ms) => {
-  const totalSeconds = Math.ceil(ms / 1e3);
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor(totalSeconds % 3600 / 60);
-  const seconds = totalSeconds % 60;
-  if (hours > 0) {
-    return `${hours}h ${minutes}m`;
-  } else if (minutes > 0) {
-    return `${minutes}m ${seconds}s`;
-  } else {
-    return `${seconds}s`;
-  }
-};
 const updateTrayMenu = () => {
   if (!tray || !cycleManager) return;
   const status = cycleManager.getStatus();
   let timeLabel = "Time until lock: N/A";
   if (status.phase === "work" && status.remainingMs > 0) {
-    timeLabel = `Time until lock: ${formatTime(status.remainingMs)}`;
+    timeLabel = `Time until lock: ${formatTrayTime(status.remainingMs)}`;
   } else if (status.phase === "break") {
-    timeLabel = `Break time: ${formatTime(status.remainingMs)}`;
+    timeLabel = `Break time: ${formatTrayTime(status.remainingMs)}`;
   } else if (status.phase === "paused") {
     timeLabel = "Cycle Paused";
   }
@@ -11471,7 +10801,7 @@ const createTray = () => {
       createWindow();
     }
   });
-  setInterval(() => {
+  trayUpdateInterval = setInterval(() => {
     updateTrayMenu();
   }, 1e3);
 };
@@ -11493,66 +10823,32 @@ const initializeCycleManager = async () => {
   if (cycleManager) {
     cycleManager.stop();
   }
-  if (!appMonitor) {
-    appMonitor = new AppMonitor();
-    appMonitor.onScanComplete((apps) => {
-      const appsData = apps.map((app2) => ({
-        id: app2.id,
-        name: app2.name,
-        category: app2.category,
-        processNames: app2.processNames
-      }));
-      settingsStore.setSetting("installedApps", appsData);
-      settingsStore.setSetting("lastAppScan", Date.now());
-      logger.info(`Saved ${apps.length} installed apps to settings`);
-    });
-    const settings2 = settingsStore.getSettings();
-    const now = Date.now();
-    const lastScan = settings2.lastAppScan || 0;
-    const scanInterval = settings2.appScanInterval || 30;
-    const daysSinceLastScan = (now - lastScan) / (1e3 * 60 * 60 * 24);
-    const shouldScan = scanInterval === 0 ? false : lastScan === 0 || daysSinceLastScan >= scanInterval;
-    if (shouldScan) {
-      logger.info(`Scanning for installed applications (last scan: ${daysSinceLastScan.toFixed(1)} days ago)...`);
-      await appMonitor.scanInstalledApps();
-    } else if (settings2.installedApps && settings2.installedApps.length > 0) {
-      logger.info(
-        `Loading ${settings2.installedApps.length} apps from cache (scanned ${daysSinceLastScan.toFixed(1)} days ago)`
-      );
-      appMonitor.loadInstalledApps(settings2.installedApps);
-    } else {
-      logger.info("No cached app data found, performing initial scan...");
-      await appMonitor.scanInstalledApps();
-    }
-    appMonitor.start();
-    logger.info("App monitor initialized and started");
-  }
   const settings = settingsStore.getSettings();
-  cycleManager = new CycleManager(settings, mainWindow, appMonitor);
+  cycleManager = new CycleManager(settings, () => mainWindow);
   cycleManager.start();
   logger.info(`Cycle manager initialized: workHours=${settings.workHours}, lockMinutes=${settings.lockMinutes}`);
 };
 const initializeMediaDirectory = async () => {
   try {
     const mediaDir = path$6.join(require$$1.app.getPath("userData"), "media");
-    if (!fs$3.existsSync(mediaDir)) {
-      await fs$4.mkdir(mediaDir, { recursive: true });
+    if (!await fileExists(mediaDir)) {
+      await fs$3.mkdir(mediaDir, { recursive: true });
       logger.info("Created media directory");
     }
     const defaultMedia = ["Wave--icon.png"];
     for (const fileName of defaultMedia) {
       const destPath = path$6.join(mediaDir, fileName);
-      if (!fs$3.existsSync(destPath)) {
+      if (!await fileExists(destPath)) {
         const sourcePath = getMediaPath(__dirname);
         const bundledFile = path$6.join(sourcePath, fileName);
-        if (fs$3.existsSync(bundledFile)) {
-          await fs$4.copyFile(bundledFile, destPath);
+        if (await fileExists(bundledFile)) {
+          await fs$3.copyFile(bundledFile, destPath);
           logger.info(`Copied ${fileName} to user media directory`);
         }
       }
     }
   } catch (error2) {
-    const errorMsg = error2 instanceof Error ? error2.message : "Unknown error";
+    const errorMsg = getErrorMessage(error2);
     logger.error("Failed to initialize media directory", new Error(errorMsg));
   }
 };
@@ -11578,23 +10874,39 @@ require$$1.protocol.registerSchemesAsPrivileged([
     }
   }
 ]);
+require$$1.app.on("web-contents-created", (_event, contents) => {
+  contents.on("will-navigate", (event, navigationUrl) => {
+    const parsed = new URL(navigationUrl);
+    if (parsed.protocol !== "file:" && parsed.hostname !== "localhost") {
+      event.preventDefault();
+      logger.warn(`Blocked navigation to: ${navigationUrl}`);
+    }
+  });
+  contents.setWindowOpenHandler(() => {
+    return { action: "deny" };
+  });
+});
 require$$1.app.on("ready", async () => {
   logger.info("App starting...");
   createSplashWindow();
   require$$1.protocol.handle("media", async (request) => {
     try {
-      const url = request.url.replace("media://", "").replace(/\/+$/, "");
+      const url = decodeURIComponent(request.url.replace("media://", "").replace(/\/+$/, ""));
       const mediaDir = path$6.join(require$$1.app.getPath("userData"), "media");
-      let filePath = path$6.join(mediaDir, url);
-      if (!fs$3.existsSync(filePath)) {
-        const bundledMediaPath = getMediaPath(__dirname);
-        filePath = path$6.join(bundledMediaPath, url);
+      const safeFilename = path$6.basename(url);
+      if (safeFilename !== url || url.includes("..")) {
+        logger.error(`Blocked path traversal attempt: ${url}`);
+        return new Response("Forbidden", { status: 403 });
       }
-      if (!fs$3.existsSync(filePath)) {
-        logger.error(`Media file not found: ${url}`);
+      let filePath = path$6.join(mediaDir, safeFilename);
+      if (!await fileExists(filePath)) {
+        const bundledMediaPath = getMediaPath(__dirname);
+        filePath = path$6.join(bundledMediaPath, safeFilename);
+      }
+      if (!await fileExists(filePath)) {
+        logger.error(`Media file not found: ${safeFilename}`);
         return new Response("File not found", { status: 404 });
       }
-      logger.info(`Serving media: ${filePath}`);
       return require$$1.net.fetch(`file://${filePath}`);
     } catch (error2) {
       logger.error("Error serving media file", error2);
@@ -11603,13 +10915,17 @@ require$$1.app.on("ready", async () => {
   });
   require$$1.protocol.handle("app-media", async (request) => {
     try {
-      const url = request.url.replace("app-media://", "").replace(/\/+$/, "");
-      const appMediaPath = getAppAssetPath(__dirname, url);
-      if (!fs$3.existsSync(appMediaPath)) {
-        logger.error(`App media file not found: ${url}`);
+      const url = decodeURIComponent(request.url.replace("app-media://", "").replace(/\/+$/, ""));
+      const safeFilename = path$6.basename(url);
+      if (safeFilename !== url || url.includes("..")) {
+        logger.error(`Blocked path traversal attempt: ${url}`);
+        return new Response("Forbidden", { status: 403 });
+      }
+      const appMediaPath = getAppAssetPath(__dirname, safeFilename);
+      if (!await fileExists(appMediaPath)) {
+        logger.error(`App media file not found: ${safeFilename}`);
         return new Response("File not found", { status: 404 });
       }
-      logger.info(`Serving app media: ${appMediaPath}`);
       return require$$1.net.fetch(`file://${appMediaPath}`);
     } catch (error2) {
       logger.error("Error serving app media file", error2);
@@ -11620,7 +10936,7 @@ require$$1.app.on("ready", async () => {
   await initializeMediaDirectory();
   await initializeCycleManager();
   standUpTimer = new StandUpTimer();
-  handleIPC(settingsStore, cycleManager, appMonitor, standUpTimer);
+  handleIPC(settingsStore, cycleManager, standUpTimer, () => mainWindow);
   closeSplashWindow();
   createWindow();
   createTray();
@@ -11663,11 +10979,12 @@ require$$1.app.on("activate", () => {
 });
 require$$1.app.on("before-quit", () => {
   isQuitting = true;
+  if (trayUpdateInterval) {
+    clearInterval(trayUpdateInterval);
+    trayUpdateInterval = null;
+  }
   if (cycleManager) {
     cycleManager.stop();
-  }
-  if (appMonitor) {
-    appMonitor.stop();
   }
   if (standUpTimer) {
     standUpTimer.stop();

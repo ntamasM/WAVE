@@ -30,10 +30,6 @@ const api = {
   getAvailableLogos: () => electron.ipcRenderer.invoke("logo:getAvailable"),
   uploadLogo: () => electron.ipcRenderer.invoke("logo:upload"),
   resolveLogoPath: (path) => electron.ipcRenderer.invoke("logo:resolvePath", path),
-  // App monitoring
-  getAvailableApps: () => electron.ipcRenderer.invoke("apps:getAvailable"),
-  scanInstalledApps: () => electron.ipcRenderer.invoke("apps:scan"),
-  getAppStates: () => electron.ipcRenderer.invoke("apps:getStates"),
   // Event listeners
   onCycleUpdate: (callback) => {
     electron.ipcRenderer.on("cycle:update", (_event, payload) => callback(payload));
@@ -56,10 +52,23 @@ const api = {
   },
   // Stand up reminder
   dismissStandUp: () => electron.ipcRenderer.send("standup:dismiss"),
+  testStandUp: () => electron.ipcRenderer.send("standup:test"),
   // Pre-lock warning
   dismissPreLock: () => electron.ipcRenderer.send("prelock:dismiss"),
+  skipPreLock: () => electron.ipcRenderer.send("prelock:skip"),
+  testPreLock: () => electron.ipcRenderer.send("prelock:test"),
   removeAllListeners: (channel) => {
-    electron.ipcRenderer.removeAllListeners(channel);
+    const allowedChannels = [
+      "cycle:update",
+      "cycle:phase-changed",
+      "window:close",
+      "window:show",
+      "lock:init",
+      "lock:update"
+    ];
+    if (allowedChannels.includes(channel)) {
+      electron.ipcRenderer.removeAllListeners(channel);
+    }
   }
 };
 electron.contextBridge.exposeInMainWorld("waveAPI", api);

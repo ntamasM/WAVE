@@ -14,18 +14,28 @@ const initialSettings: Settings = {
   startWithWindows: true,
   enableLogging: true,
   theme: 'light',
-  excludedApps: [],
 };
 
 let currentSettings = initialSettings;
 const listeners: Set<SettingsListener> = new Set();
+
+const applySettings = async (partial: Partial<Settings>): Promise<Settings> => {
+  const validation = await window.waveAPI.validateSettings(partial);
+  if (!validation.valid) {
+    throw new Error(validation.errors.join('; '));
+  }
+
+  const updated = await window.waveAPI.setSettings(partial);
+  currentSettings = updated;
+  listeners.forEach((cb) => cb(updated));
+  return updated;
+};
 
 export const useSettings = () => {
   const [settings, setSettingsState] = useState<Settings>(currentSettings);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Load settings from main process
     window.waveAPI.getSettings().then((loaded) => {
       currentSettings = loaded;
       setSettingsState(loaded);
@@ -35,24 +45,11 @@ export const useSettings = () => {
   }, []);
 
   const setSettings = useCallback(async (partial: Partial<Settings>) => {
-    try {
-      const validation = await window.waveAPI.validateSettings(partial);
-      if (!validation.valid) {
-        throw new Error(validation.errors.join('; '));
-      }
-
-      const updated = await window.waveAPI.setSettings(partial);
-      currentSettings = updated;
-      setSettingsState(updated);
-      listeners.forEach((cb) => cb(updated));
-      return updated;
-    } catch (err) {
-      console.error('Failed to set settings:', err);
-      throw err;
-    }
+    const updated = await applySettings(partial);
+    setSettingsState(updated);
+    return updated;
   }, []);
 
-  // Subscribe to changes
   useEffect(() => {
     const listener = (s: Settings) => setSettingsState(s);
     listeners.add(listener);
@@ -64,22 +61,8 @@ export const useSettings = () => {
   return { settings, setSettings, loading };
 };
 
-// External setter for use in other modules
 export const updateSettings = async (partial: Partial<Settings>) => {
-  try {
-    const validation = await window.waveAPI.validateSettings(partial);
-    if (!validation.valid) {
-      throw new Error(validation.errors.join('; '));
-    }
-
-    const updated = await window.waveAPI.setSettings(partial);
-    currentSettings = updated;
-    listeners.forEach((cb) => cb(updated));
-    return updated;
-  } catch (err) {
-    console.error('Failed to update settings:', err);
-    throw err;
-  }
+  return applySettings(partial);
 };
 
 export const getSettings = (): Settings => currentSettings;

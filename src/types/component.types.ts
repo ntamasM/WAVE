@@ -42,3 +42,24 @@ export interface LockData {
   showSkipButton: boolean;
   startTime: number;
 }
+
+export interface LockUpdateData {
+  remainingMs: number;
+}
+
+// Checkbox component types
+export interface CheckboxProps {
+  id: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  label?: string;
+  description?: string;
+  disabled?: boolean;
+  className?: string;
+}
+
+// Logo thumbnail types
+export interface LogoThumbnailProps {
+  logo: string;
+  onSelect: (logo: string) => void;
+}

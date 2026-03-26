@@ -3,7 +3,6 @@ import { Settings } from '../types/settings.types';
 import { CycleStatus, CycleState } from '../types/cycle.types';
 import { LockWindow } from './lock-window';
 import { Logger } from './logger';
-import { AppMonitor } from './app-monitor';
 import { PreLockWindow } from './pre-lock-window';
 
 const logger = new Logger('cycle-manager');
@@ -18,20 +17,16 @@ export class CycleManager {
   private settings: Settings;
   private state: CycleState;
   private intervalId: NodeJS.Timeout | null = null;
-  private mainWindow: BrowserWindow | null = null;
+  private getMainWindow: () => BrowserWindow | null;
   private systemWasAsleep = false;
   private lockWindow: LockWindow;
   private preLockWindow: PreLockWindow;
-  private preLockWarningFired = false;
-  private appMonitor: AppMonitor | null = null;
-  private wasAutoPaused = false; // Track if cycle was auto-paused due to app activity
-
-  constructor(settings: Settings, mainWindow: BrowserWindow | null, appMonitor?: AppMonitor) {
+  private firedReminders: Set<number> = new Set();
+  constructor(settings: Settings, getMainWindow: () => BrowserWindow | null) {
     this.settings = settings;
-    this.mainWindow = mainWindow;
+    this.getMainWindow = getMainWindow;
     this.lockWindow = new LockWindow();
     this.preLockWindow = new PreLockWindow();
-    this.appMonitor = appMonitor || null;
     this.state = {
       phase: 'work',
       workStartedAt: null,
@@ -45,7 +40,7 @@ export class CycleManager {
     logger.info('Cycle started');
     this.state.workStartedAt = Date.now();
     this.state.phase = 'work';
-    this.preLockWarningFired = false;
+    this.firedReminders.clear();
 
     if (this.intervalId) {
       clearInterval(this.intervalId);
@@ -136,9 +131,6 @@ export class CycleManager {
   private tick(): void {
     const status = this.getStatus();
 
-    // Check if we need to auto-pause/resume based on excluded apps
-    this.checkExcludedApps();
-
     // Emit update for UI
     this.emit('cycle:update', {
       phase: this.state.phase,
@@ -159,13 +151,24 @@ export class CycleManager {
 
   private handleWorkPhase(remainingMs: number): void {
     const warningEnabled = this.settings.preLockWarningEnabled ?? false;
-    const warningMinutes = this.settings.preLockWarningMinutes ?? 5;
+    const reminders = this.settings.preLockReminders ?? [5];
 
-    // Show pre-lock warning once when within the warning window
-    if (warningEnabled && !this.preLockWarningFired && remainingMs > 0 && remainingMs <= warningMinutes * 60 * 1000) {
-      this.preLockWarningFired = true;
-      this.preLockWindow.show(warningMinutes);
-      logger.info(`Pre-lock warning shown: ${warningMinutes}m before lock`);
+    // Check each reminder (sorted descending so the earliest trigger fires first)
+    if (warningEnabled && remainingMs > 0) {
+      const sorted = [...reminders].sort((a, b) => b - a);
+      const lastMinute = Math.min(...reminders);
+
+      for (const minutes of sorted) {
+        if (!this.firedReminders.has(minutes) && remainingMs <= minutes * 60 * 1000) {
+          this.firedReminders.add(minutes);
+          this.preLockWindow.close(); // Close previous reminder before showing new one
+          const isLast = minutes === lastMinute;
+          const showSkip = isLast && (this.settings.preLockSkipEnabled ?? false);
+          this.preLockWindow.show(minutes, showSkip);
+          logger.info(`Pre-lock reminder shown: ${minutes}m before lock (last=${isLast}, skip=${showSkip})`);
+          break; // Only fire one per tick
+        }
+      }
     }
 
     if (remainingMs <= 0) {
@@ -189,7 +192,7 @@ export class CycleManager {
       this.state.phase = 'work';
       this.state.workStartedAt = Date.now();
       this.state.breakStartedAt = null;
-      this.preLockWarningFired = false;
+      this.firedReminders.clear();
       this.emit('cycle:phase-changed', 'work');
     }
   }
@@ -262,7 +265,7 @@ export class CycleManager {
     this.state.phase = 'work';
     this.state.workStartedAt = Date.now();
     this.state.breakStartedAt = null;
-    this.preLockWarningFired = false;
+    this.firedReminders.clear();
     this.emit('cycle:phase-changed', 'work');
 
     logger.info('Work cycle restarted after skip');
@@ -272,15 +275,20 @@ export class CycleManager {
     this.preLockWindow.close();
   }
 
+  showPreLockWarning(minutes: number, showSkip: boolean = false): void {
+    this.preLockWindow.show(minutes, showSkip);
+  }
+
   private emit(channel: string, data?: unknown): void {
-    if (this.mainWindow && !this.mainWindow.isDestroyed()) {
-      this.mainWindow.webContents.send(channel, data);
+    const win = this.getMainWindow();
+    if (win && !win.isDestroyed()) {
+      win.webContents.send(channel, data);
     }
   }
 
   reset(): void {
     this.preLockWindow.close();
-    this.preLockWarningFired = false;
+    this.firedReminders.clear();
     this.state = {
       phase: 'work',
       workStartedAt: Date.now(),
@@ -292,31 +300,4 @@ export class CycleManager {
     logger.info('Cycle reset');
   }
 
-  /**
-   * Check excluded apps and auto-pause/resume cycle accordingly
-   */
-  private checkExcludedApps(): void {
-    if (!this.appMonitor || !this.settings.excludedApps || this.settings.excludedApps.length === 0) {
-      return;
-    }
-
-    // Skip if we're in break phase (don't interrupt breaks)
-    if (this.state.phase === 'break' || this.state.phase === 'locking') {
-      return;
-    }
-
-    const shouldPause = this.appMonitor.shouldPauseCycle(this.settings.excludedApps);
-
-    if (shouldPause && this.state.phase !== 'paused') {
-      // Auto-pause the cycle
-      logger.info('Auto-pausing cycle due to excluded app activity');
-      this.wasAutoPaused = true;
-      this.pause();
-    } else if (!shouldPause && this.state.phase === 'paused' && this.wasAutoPaused) {
-      // Auto-resume the cycle
-      logger.info('Auto-resuming cycle as excluded app activity ended');
-      this.wasAutoPaused = false;
-      this.resume();
-    }
-  }
 }

@@ -13,6 +13,18 @@ export interface CycleUpdate {
   totalMs: number;
 }
 
+export interface CycleContextType {
+  status: CycleStatus | null;
+  displayTime: number;
+  isLoading: boolean;
+  refreshStatus: () => Promise<void>;
+}
+
+export interface PhaseContextType {
+  phase: CyclePhase | null;
+  refreshStatus: () => Promise<void>;
+}
+
 export interface CycleState {
   phase: CyclePhase;
   workStartedAt: number | null;

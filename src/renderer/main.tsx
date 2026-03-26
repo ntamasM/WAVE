@@ -4,7 +4,8 @@ import App from './App';
 import './styles/index.css';
 import type { CustomizationSettings } from '../types/settings.types';
 import { DEFAULT_CUSTOMIZATION } from '../types/settings.types';
-import type { LockData } from '../types/component.types';
+import type { LockData, LockUpdateData } from '../types/component.types';
+import { formatLockTime } from '../shared/format';
 
 const STANDUP_DISMISS_MS = 8000;
 
@@ -18,8 +19,8 @@ const StandUpReminder: React.FC = () => {
   }, []);
 
   return (
-    <div className="w-screen h-screen bg-transparent flex items-center justify-center">
-      <div className="flex items-center gap-3 bg-vista-blue-700 text-white rounded-2xl shadow-2xl px-4 py-3 w-full mx-3">
+    <div className="w-screen h-screen bg-transparent flex items-center justify-center p-5">
+      <div className="flex items-center gap-3 bg-vista-blue-700 text-white rounded-2xl shadow-2xl px-4 py-3 w-full">
         {/* Bouncing stand up icon */}
         <div className="animate-bounce flex-shrink-0">
           <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24">
@@ -59,36 +60,49 @@ const StandUpReminder: React.FC = () => {
 const PreLockReminder: React.FC = () => {
   const urlParams = new URLSearchParams(window.location.search);
   const minutes = parseInt(urlParams.get('minutes') || '5', 10);
+  const showSkip = urlParams.get('showSkip') === 'true';
 
   return (
-    <div className="w-screen h-screen bg-transparent flex items-center justify-center">
-      <div className="flex items-center gap-3 bg-amber-600 text-white rounded-2xl shadow-2xl px-4 py-3 w-full mx-3">
-        {/* Warning icon */}
-        <div className="flex-shrink-0">
-          <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24">
-            <path
-              fill="currentColor"
-              d="M1 21L12 2l11 19zm11-3q.425 0 .713-.288T13 17t-.288-.712T12 16t-.712.288T11 17t.288.713T12 18m-1-3h2v-5h-2z"
-            />
-          </svg>
+    <div className="w-screen h-screen bg-transparent flex items-center justify-center p-5">
+      <div className="bg-amber-600 text-white rounded-2xl shadow-2xl px-4 py-3 w-full">
+        <div className="flex items-center gap-3">
+          {/* Warning icon */}
+          <div className="flex-shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24">
+              <path
+                fill="currentColor"
+                d="M1 21L12 2l11 19zm11-3q.425 0 .713-.288T13 17t-.288-.712T12 16t-.712.288T11 17t.288.713T12 18m-1-3h2v-5h-2z"
+              />
+            </svg>
+          </div>
+
+          {/* Text */}
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-sm leading-tight">Screen locking soon!</p>
+            <p className="text-xs text-amber-200 mt-0.5">
+              Your screen will lock in {minutes} minute{minutes !== 1 ? 's' : ''}
+            </p>
+          </div>
+
+          {/* Dismiss button */}
+          <button
+            className="flex-shrink-0 text-amber-300 hover:text-white text-lg leading-none px-1"
+            onClick={() => window.waveAPI.dismissPreLock()}
+            aria-label="Dismiss"
+          >
+            ✕
+          </button>
         </div>
 
-        {/* Text */}
-        <div className="flex-1 min-w-0">
-          <p className="font-bold text-sm leading-tight">Screen locking soon!</p>
-          <p className="text-xs text-amber-200 mt-0.5">
-            Your screen will lock in {minutes} minute{minutes !== 1 ? 's' : ''}
-          </p>
-        </div>
-
-        {/* Dismiss button */}
-        <button
-          className="flex-shrink-0 text-amber-300 hover:text-white text-lg leading-none px-1"
-          onClick={() => window.waveAPI.dismissPreLock()}
-          aria-label="Dismiss"
-        >
-          ✕
-        </button>
+        {/* Skip Lock button */}
+        {showSkip && (
+          <button
+            className="mt-2 w-full py-1.5 text-xs font-semibold bg-white/20 hover:bg-white/30 rounded-lg transition-colors"
+            onClick={() => window.waveAPI.skipPreLock()}
+          >
+            Skip this lock
+          </button>
+        )}
       </div>
     </div>
   );
@@ -123,7 +137,7 @@ const LockScreen: React.FC = () => {
     };
 
     // Listen for timer updates
-    const handleUpdate = (data: { remainingMs: number }) => {
+    const handleUpdate = (data: LockUpdateData) => {
       setRemainingMs(data.remainingMs);
     };
 
@@ -140,13 +154,6 @@ const LockScreen: React.FC = () => {
     if (skipping) return; // Prevent multiple clicks
     setSkipping(true);
     window.waveAPI.skipLock();
-  };
-
-  const formatTime = (ms: number): string => {
-    const totalSeconds = Math.ceil(ms / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
   const progressPercent = totalMs > 0 ? ((totalMs - remainingMs) / totalMs) * 100 : 0;
@@ -178,7 +185,7 @@ const LockScreen: React.FC = () => {
             className="text-9xl font-bold mb-8 font-mono drop-shadow-2xl"
             style={{ color: customization.timerColor }}
           >
-            {formatTime(remainingMs)}
+            {formatLockTime(remainingMs)}
           </div>
 
           {/* Progress Bar */}
@@ -217,18 +224,12 @@ const BlankScreen: React.FC = () => {
   const [customization, setCustomization] = useState<CustomizationSettings>(DEFAULT_CUSTOMIZATION);
 
   useEffect(() => {
-    console.log('[BlankScreen] Component mounted, loading settings...');
-    // Load customization settings
     window.waveAPI.getSettings().then((settings) => {
-      console.log('[BlankScreen] Settings loaded:', settings);
       if (settings.customization) {
         setCustomization(settings.customization);
-        console.log('[BlankScreen] Customization applied:', settings.customization.backgroundGradient);
       }
     });
   }, []);
-
-  console.log('[BlankScreen] Rendering with gradient:', customization.backgroundGradient);
 
   return (
     <div
@@ -249,8 +250,6 @@ const Router: React.FC = () => {
   const display = urlParams.get('display');
   const isPrimary = urlParams.get('isPrimary') === 'true';
 
-  console.log('[WAVE Router]', { mode, display, isPrimary, url: window.location.href });
-
   if (mode === 'standup') {
     return <StandUpReminder />;
   }
@@ -260,13 +259,9 @@ const Router: React.FC = () => {
   }
 
   if (mode === 'lock') {
-    // Show timer content only on primary display
     if (isPrimary) {
-      console.log('[WAVE] Rendering LockScreen (Primary Display)');
       return <LockScreen />;
     }
-    // Show gradient on all secondary displays
-    console.log('[WAVE] Rendering BlankScreen (Secondary Display)');
     return <BlankScreen />;
   }
 

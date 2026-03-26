@@ -1,31 +1,34 @@
 import React, { useEffect, useState } from 'react';
-import { FaGlobe, FaHeart, FaCode, FaLock, FaWindows } from 'react-icons/fa';
+import { FaGlobe, FaHeart, FaCode, FaLock, FaWindows, FaArrowUp, FaBell, FaPalette, FaClock } from 'react-icons/fa';
 
 export const About: React.FC = () => {
   const [logoUrl, setLogoUrl] = useState<string>('');
+  const [version, setVersion] = useState<string>('');
 
   useEffect(() => {
-    // Resolve the app logo path
     window.waveAPI.resolveLogoPath('./Wave--icon.png').then((resolved) => {
       setLogoUrl(resolved);
+    });
+    window.waveAPI.getVersion().then((v) => {
+      setVersion(v);
     });
   }, []);
 
   const handleOpenExternal = (url: string) => {
     window.waveAPI.openExternal(url);
   };
+
   return (
     <div className="page-container max-w-3xl mx-auto">
       <div className="section-card p-8 space-y-8">
         {/* App Info */}
         <div className="text-center">
           {logoUrl && <img src={logoUrl} alt="WAVE" className="w-32 h-32 object-contain mx-auto mb-2" />}
-
           <h1 className="text-4xl font-bold text-primary mb-2">WAVE</h1>
           <p className="text-secondary text-lg">
-            Work And Vital Energy - Enforce focus through automated OS-level breaks
+            Work And Vital Energy — Enforce focus through automated OS-level breaks
           </p>
-          <p className="text-sm text-muted mt-2 font-medium">Version 0.0.15</p>
+          <p className="text-sm text-muted mt-2 font-medium">Version {version || '1.0.0'}</p>
         </div>
 
         {/* Description */}
@@ -41,7 +44,8 @@ export const About: React.FC = () => {
           </p>
           <p className="text-secondary leading-relaxed">
             After configurable work periods, fullscreen lock windows appear on all monitors for a set break duration,
-            displaying a timer and optional skip button.
+            displaying a countdown timer and optional skip button. The lock screen is fully customizable with gradient
+            backgrounds, custom logos, and personalized text.
           </p>
         </div>
 
@@ -54,20 +58,44 @@ export const About: React.FC = () => {
           <ul className="space-y-3 text-secondary">
             <li className="flex items-start gap-3 p-3 bg-vista-blue-50 dark:bg-vista-blue-900/20 rounded-lg">
               <FaWindows className="icon-primary mt-1 flex-shrink-0" />
-              <span>Multi-Monitor Lock Windows on all displays simultaneously</span>
+              <span>
+                <strong>Multi-Monitor Lock</strong> — Fullscreen lock windows on all displays simultaneously, covering
+                taskbar and everything else
+              </span>
             </li>
             <li className="flex items-start gap-3 p-3 bg-vista-blue-50 dark:bg-vista-blue-900/20 rounded-lg">
-              <FaLock className="icon-primary mt-1 flex-shrink-0" />
-              <span>Beautiful Lock Screen with branded gradient and timer countdown</span>
+              <FaPalette className="icon-primary mt-1 flex-shrink-0" />
+              <span>
+                <strong>Customizable Lock Screen</strong> — Gradient backgrounds, custom logo, personalized title and
+                subtitle, timer and progress bar colors, skip button styling
+              </span>
             </li>
-
+            <li className="flex items-start gap-3 p-3 bg-vista-blue-50 dark:bg-vista-blue-900/20 rounded-lg">
+              <FaBell className="icon-primary mt-1 flex-shrink-0" />
+              <span>
+                <strong>Pre-Lock Warnings</strong> — Up to 3 reminders before the lock screen (at 5, 3, and 1 minutes),
+                with optional skip button on the last reminder to reset the countdown
+              </span>
+            </li>
+            <li className="flex items-start gap-3 p-3 bg-vista-blue-50 dark:bg-vista-blue-900/20 rounded-lg">
+              <FaArrowUp className="icon-primary mt-1 flex-shrink-0" />
+              <span>
+                <strong>Stand Up Reminders</strong> — Periodic overlay notifications to stand up and stretch, with 9
+                screen positions and auto-dismiss
+              </span>
+            </li>
+            <li className="flex items-start gap-3 p-3 bg-vista-blue-50 dark:bg-vista-blue-900/20 rounded-lg">
+              <FaClock className="icon-primary mt-1 flex-shrink-0" />
+              <span>
+                <strong>Sleep/Resume Aware</strong> — Uses wall-clock time so system sleep doesn&apos;t cheat the cycle
+              </span>
+            </li>
             <li className="flex items-start gap-3 p-3 bg-vista-blue-50 dark:bg-vista-blue-900/20 rounded-lg">
               <FaWindows className="icon-primary mt-1 flex-shrink-0" />
-              <span>Autostart with Windows in the background (system tray)</span>
-            </li>
-            <li className="flex items-start gap-3 p-3 bg-vista-blue-50 dark:bg-vista-blue-900/20 rounded-lg">
-              <FaCode className="icon-primary mt-1 flex-shrink-0" />
-              <span>Sleep/Resume Aware with wall-clock time adjustments</span>
+              <span>
+                <strong>System Integration</strong> — Autostart with Windows, system tray with live timer, dark/light
+                theme, diagnostic logging
+              </span>
             </li>
           </ul>
         </div>
@@ -76,10 +104,10 @@ export const About: React.FC = () => {
         <div className="divider pt-6">
           <h2 className="text-2xl font-bold text-primary mb-4 flex items-center gap-2">
             <FaCode className="icon-primary" />
-            Hidden Features
+            Keyboard Shortcuts
           </h2>
           <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/30 p-5 rounded-xl border-2 border-amber-200 dark:border-amber-700 transition-colors duration-200">
-            <h3 className="text-lg font-semibold text-primary mb-3">Global Keyboard Shortcut</h3>
+            <h3 className="text-lg font-semibold text-primary mb-3">Skip Lock</h3>
             <div className="flex items-center gap-3 text-secondary">
               <kbd className="px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md font-mono text-sm shadow-sm">
                 Ctrl
@@ -113,11 +141,11 @@ export const About: React.FC = () => {
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div className="bg-bright-gray-50 dark:bg-bright-gray-700 p-4 rounded-xl border border-bright-gray-200 dark:border-bright-gray-600 transition-colors duration-200">
               <p className="font-semibold text-primary mb-1">Runtime</p>
-              <p className="text-secondary">Electron + electron-vite</p>
+              <p className="text-secondary">Electron 39 + electron-vite</p>
             </div>
             <div className="bg-bright-gray-50 dark:bg-bright-gray-700 p-4 rounded-xl border border-bright-gray-200 dark:border-bright-gray-600 transition-colors duration-200">
               <p className="font-semibold text-primary mb-1">UI Framework</p>
-              <p className="text-secondary">React 18 + Tailwind CSS</p>
+              <p className="text-secondary">React 18 + Tailwind CSS v3</p>
             </div>
             <div className="bg-bright-gray-50 dark:bg-bright-gray-700 p-4 rounded-xl border border-bright-gray-200 dark:border-bright-gray-600 transition-colors duration-200">
               <p className="font-semibold text-primary mb-1">Language</p>
@@ -160,7 +188,7 @@ export const About: React.FC = () => {
         {/* License */}
         <div className="divider pt-6 text-center">
           <p className="text-sm text-muted">Released under the MIT License</p>
-          <p className="text-xs text-muted mt-2">© 2025 Manolis Ntamadakis. All rights reserved.</p>
+          <p className="text-xs text-muted mt-2">&copy; {new Date().getFullYear()} Manolis Ntamadakis. All rights reserved.</p>
         </div>
       </div>
     </div>

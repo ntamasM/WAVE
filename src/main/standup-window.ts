@@ -1,14 +1,12 @@
 import { BrowserWindow, screen } from 'electron';
-import { join } from 'path';
-import { is } from '@electron-toolkit/utils';
 import { Logger } from './logger';
-import { getAppAssetPath } from './resources';
+import { createOverlayWindow } from './overlay-window';
 import type { StandUpPosition } from '../types/settings.types';
 
 const logger = new Logger('standup-window');
 
-const WINDOW_WIDTH = 380;
-const WINDOW_HEIGHT = 120;
+const WINDOW_WIDTH = 420;
+const WINDOW_HEIGHT = 160;
 const MARGIN = 20;
 const AUTO_CLOSE_MS = 8500;
 
@@ -48,40 +46,12 @@ export class StandUpWindow {
       return; // Already showing
     }
 
-    const iconPath = getAppAssetPath(__dirname, 'Wave--icon.png');
-
-    this.win = new BrowserWindow({
+    this.win = createOverlayWindow(__dirname, {
       width: WINDOW_WIDTH,
       height: WINDOW_HEIGHT,
-      frame: false,
-      transparent: true,
-      backgroundColor: '#00000000',
-      alwaysOnTop: true,
-      skipTaskbar: true,
-      resizable: false,
-      movable: false,
-      minimizable: false,
-      maximizable: false,
-      focusable: true,
-      hasShadow: false,
-      show: false,
-      webPreferences: {
-        preload: join(__dirname, '../preload/index.js'),
-        contextIsolation: true,
-        nodeIntegration: false,
-        sandbox: true,
-      },
-      icon: iconPath,
       title: 'WAVE - Stand Up',
+      queryParams: 'mode=standup',
     });
-
-    this.win.setAlwaysOnTop(true, 'screen-saver', 1);
-
-    if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-      this.win.loadURL(`${process.env['ELECTRON_RENDERER_URL']}?mode=standup`);
-    } else {
-      this.win.loadURL(`file://${join(__dirname, '../renderer/index.html')}?mode=standup`);
-    }
 
     this.win.webContents.on('did-finish-load', () => {
       if (!this.win || this.win.isDestroyed()) return;

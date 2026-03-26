@@ -18,8 +18,10 @@ import {
   FaUpload,
 } from 'react-icons/fa';
 
+import type { LogoThumbnailProps } from '../../types/component.types';
+
 // Separate component for logo thumbnail to avoid hooks in loops
-const LogoThumbnail: React.FC<{ logo: string; onSelect: (logo: string) => void }> = ({ logo, onSelect }) => {
+const LogoThumbnail: React.FC<LogoThumbnailProps> = ({ logo, onSelect }) => {
   const [resolvedUrl, setResolvedUrl] = useState<string>('');
 
   useEffect(() => {

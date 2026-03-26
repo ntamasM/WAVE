@@ -1,14 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Layout } from './components/Layout';
 import { TitleBar } from './components/TitleBar';
 import { Home } from './pages/Home';
-import { Settings } from './pages/Settings';
-import { Customization } from './pages/Customization';
-import { About } from './pages/About';
 import { useSettings } from './store/useSettings';
 import { CycleProvider } from './context/CycleContext';
+
+const Settings = React.lazy(() => import('./pages/Settings'));
+const Customization = React.lazy(() => import('./pages/Customization'));
+const About = React.lazy(() => import('./pages/About'));
 
 export const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<'home' | 'settings' | 'customization' | 'about'>('home');
@@ -43,7 +44,11 @@ export const App: React.FC = () => {
     <CycleProvider>
       <div className="h-screen flex flex-col overflow-hidden bg-bright-gray-50 dark:bg-bright-gray-900 transition-colors duration-200">
         <TitleBar currentPage={currentPage} onNavigate={setCurrentPage} />
-        <Layout>{renderPage()}</Layout>
+        <Layout>
+          <Suspense fallback={<div className="flex items-center justify-center h-full text-secondary">Loading...</div>}>
+            {renderPage()}
+          </Suspense>
+        </Layout>
         <ToastContainer
           position="top-right"
           autoClose={3000}

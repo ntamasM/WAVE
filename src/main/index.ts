@@ -1,16 +1,29 @@
-import { app, BrowserWindow, Menu, Tray, nativeImage, powerMonitor, protocol, net, globalShortcut } from 'electron';
-import { join } from 'path';
+import { app, BrowserWindow, Menu, Tray, nativeImage, powerMonitor, protocol, net, globalShortcut, shell, session } from 'electron';
+import path, { join } from 'path';
 import { is } from '@electron-toolkit/utils';
 import { Logger } from './logger';
 import { SettingsStore } from './settings-store';
 import { CycleManager } from './cycle-manager';
-import { AppMonitor } from './app-monitor';
 import { handleIPC } from './ipc';
 import { StandUpTimer } from './standup-timer';
 import { setAutoStart, getAutoStart } from './autostart';
 import { getAppAssetPath, getMediaPath } from './resources';
+import { getErrorMessage } from '../shared/errors';
+import { formatTrayTime } from '../shared/format';
 import fs from 'fs/promises';
-import { existsSync } from 'fs';
+
+// Disable default application menu early to avoid startup cost (Electron perf rec #8)
+Menu.setApplicationMenu(null);
+
+/** Non-blocking file existence check */
+async function fileExists(filePath: string): Promise<boolean> {
+  try {
+    await fs.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 const logger = new Logger('main');
 let mainWindow: BrowserWindow | null = null;
@@ -18,9 +31,9 @@ let splashWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 const settingsStore = new SettingsStore();
 let cycleManager: CycleManager | null = null;
-let appMonitor: AppMonitor | null = null;
 let standUpTimer: StandUpTimer | null = null;
 let isQuitting = false;
+let trayUpdateInterval: ReturnType<typeof setInterval> | null = null;
 
 const createSplashWindow = (): void => {
   const iconPath = getAppAssetPath(__dirname, 'Wave--icon.png');
@@ -111,6 +124,30 @@ const createWindow = (): void => {
     }
   });
 
+  // Security: Deny all permission requests (Electron security rec #5)
+  mainWindow.webContents.session.setPermissionRequestHandler((_webContents, _permission, callback) => {
+    callback(false);
+  });
+
+  // Security: Restrict navigation to app origins only (Electron security rec #13)
+  mainWindow.webContents.on('will-navigate', (event, navigationUrl) => {
+    const parsed = new URL(navigationUrl);
+    // Allow only file:// (production) and localhost (dev)
+    if (parsed.protocol !== 'file:' && parsed.hostname !== 'localhost') {
+      event.preventDefault();
+      logger.warn(`Blocked navigation to: ${navigationUrl}`);
+    }
+  });
+
+  // Security: Deny all new window creation (Electron security rec #14)
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    // Open external links in the default browser instead
+    if (url.startsWith('https://') || url.startsWith('http://')) {
+      shell.openExternal(url);
+    }
+    return { action: 'deny' };
+  });
+
   // Override CSP to allow media:// and app-media:// protocols for images
   mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
     const headers = { ...details.responseHeaders };
@@ -124,20 +161,6 @@ const createWindow = (): void => {
   });
 };
 
-const formatTime = (ms: number): string => {
-  const totalSeconds = Math.ceil(ms / 1000);
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-
-  if (hours > 0) {
-    return `${hours}h ${minutes}m`;
-  } else if (minutes > 0) {
-    return `${minutes}m ${seconds}s`;
-  } else {
-    return `${seconds}s`;
-  }
-};
 
 const updateTrayMenu = (): void => {
   if (!tray || !cycleManager) return;
@@ -146,9 +169,9 @@ const updateTrayMenu = (): void => {
   let timeLabel = 'Time until lock: N/A';
 
   if (status.phase === 'work' && status.remainingMs > 0) {
-    timeLabel = `Time until lock: ${formatTime(status.remainingMs)}`;
+    timeLabel = `Time until lock: ${formatTrayTime(status.remainingMs)}`;
   } else if (status.phase === 'break') {
-    timeLabel = `Break time: ${formatTime(status.remainingMs)}`;
+    timeLabel = `Break time: ${formatTrayTime(status.remainingMs)}`;
   } else if (status.phase === 'paused') {
     timeLabel = 'Cycle Paused';
   }
@@ -224,7 +247,7 @@ const createTray = (): void => {
   });
 
   // Update tray menu every second to keep the timer current
-  setInterval(() => {
+  trayUpdateInterval = setInterval(() => {
     updateTrayMenu();
   }, 1000);
 };
@@ -249,52 +272,8 @@ const initializeCycleManager = async (): Promise<void> => {
     cycleManager.stop();
   }
 
-  // Initialize app monitor if not already initialized
-  if (!appMonitor) {
-    appMonitor = new AppMonitor();
-
-    // Set callback to save installed apps when scan completes
-    appMonitor.onScanComplete((apps) => {
-      const appsData = apps.map((app) => ({
-        id: app.id,
-        name: app.name,
-        category: app.category,
-        processNames: app.processNames,
-      }));
-      settingsStore.setSetting('installedApps', appsData);
-      settingsStore.setSetting('lastAppScan', Date.now());
-      logger.info(`Saved ${apps.length} installed apps to settings`);
-    });
-
-    const settings = settingsStore.getSettings();
-    const now = Date.now();
-    const lastScan = settings.lastAppScan || 0;
-    const scanInterval = settings.appScanInterval || 30; // Days
-    const daysSinceLastScan = (now - lastScan) / (1000 * 60 * 60 * 24);
-
-    // Determine if we need to scan
-    const shouldScan = scanInterval === 0 ? false : lastScan === 0 || daysSinceLastScan >= scanInterval;
-
-    if (shouldScan) {
-      logger.info(`Scanning for installed applications (last scan: ${daysSinceLastScan.toFixed(1)} days ago)...`);
-      await appMonitor.scanInstalledApps();
-    } else if (settings.installedApps && settings.installedApps.length > 0) {
-      logger.info(
-        `Loading ${settings.installedApps.length} apps from cache (scanned ${daysSinceLastScan.toFixed(1)} days ago)`
-      );
-      appMonitor.loadInstalledApps(settings.installedApps);
-    } else {
-      // No cached data and scan disabled or not yet needed - do initial scan anyway
-      logger.info('No cached app data found, performing initial scan...');
-      await appMonitor.scanInstalledApps();
-    }
-
-    appMonitor.start();
-    logger.info('App monitor initialized and started');
-  }
-
   const settings = settingsStore.getSettings();
-  cycleManager = new CycleManager(settings, mainWindow, appMonitor);
+  cycleManager = new CycleManager(settings, () => mainWindow);
   cycleManager.start();
 
   logger.info(`Cycle manager initialized: workHours=${settings.workHours}, lockMinutes=${settings.lockMinutes}`);
@@ -305,7 +284,7 @@ const initializeMediaDirectory = async (): Promise<void> => {
     const mediaDir = join(app.getPath('userData'), 'media');
 
     // Create media directory if it doesn't exist
-    if (!existsSync(mediaDir)) {
+    if (!(await fileExists(mediaDir))) {
       await fs.mkdir(mediaDir, { recursive: true });
       logger.info('Created media directory');
     }
@@ -315,19 +294,19 @@ const initializeMediaDirectory = async (): Promise<void> => {
 
     for (const fileName of defaultMedia) {
       const destPath = join(mediaDir, fileName);
-      if (!existsSync(destPath)) {
+      if (!(await fileExists(destPath))) {
         // Get bundled default media from assets/media
         const sourcePath = getMediaPath(__dirname);
         const bundledFile = join(sourcePath, fileName);
 
-        if (existsSync(bundledFile)) {
+        if (await fileExists(bundledFile)) {
           await fs.copyFile(bundledFile, destPath);
           logger.info(`Copied ${fileName} to user media directory`);
         }
       }
     }
   } catch (error) {
-    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+    const errorMsg = getErrorMessage(error);
     logger.error('Failed to initialize media directory', new Error(errorMsg));
   }
 };
@@ -356,6 +335,21 @@ protocol.registerSchemesAsPrivileged([
   },
 ]);
 
+// Security: Apply navigation/window restrictions to ALL web contents (Electron security rec #13, #14)
+app.on('web-contents-created', (_event, contents) => {
+  contents.on('will-navigate', (event, navigationUrl) => {
+    const parsed = new URL(navigationUrl);
+    if (parsed.protocol !== 'file:' && parsed.hostname !== 'localhost') {
+      event.preventDefault();
+      logger.warn(`Blocked navigation to: ${navigationUrl}`);
+    }
+  });
+
+  contents.setWindowOpenHandler(() => {
+    return { action: 'deny' };
+  });
+});
+
 app.on('ready', async () => {
   logger.info('App starting...');
 
@@ -365,25 +359,30 @@ app.on('ready', async () => {
   // Register media protocol handler (for user customizable media)
   protocol.handle('media', async (request) => {
     try {
-      // Remove protocol and clean up the URL (strip trailing slashes)
-      const url = request.url.replace('media://', '').replace(/\/+$/, '');
+      const url = decodeURIComponent(request.url.replace('media://', '').replace(/\/+$/, ''));
       const mediaDir = join(app.getPath('userData'), 'media');
 
-      // Try user media directory first
-      let filePath = join(mediaDir, url);
-
-      if (!existsSync(filePath)) {
-        // Fallback to bundled default media
-        const bundledMediaPath = getMediaPath(__dirname);
-        filePath = join(bundledMediaPath, url);
+      // Security: prevent directory traversal (Electron security rec #18)
+      const safeFilename = path.basename(url);
+      if (safeFilename !== url || url.includes('..')) {
+        logger.error(`Blocked path traversal attempt: ${url}`);
+        return new Response('Forbidden', { status: 403 });
       }
 
-      if (!existsSync(filePath)) {
-        logger.error(`Media file not found: ${url}`);
+      // Try user media directory first
+      let filePath = join(mediaDir, safeFilename);
+
+      if (!(await fileExists(filePath))) {
+        // Fallback to bundled default media
+        const bundledMediaPath = getMediaPath(__dirname);
+        filePath = join(bundledMediaPath, safeFilename);
+      }
+
+      if (!(await fileExists(filePath))) {
+        logger.error(`Media file not found: ${safeFilename}`);
         return new Response('File not found', { status: 404 });
       }
 
-      logger.info(`Serving media: ${filePath}`);
       return net.fetch(`file://${filePath}`);
     } catch (error) {
       logger.error('Error serving media file', error as Error);
@@ -394,15 +393,22 @@ app.on('ready', async () => {
   // Register app-media protocol handler (for bundled app assets like logo)
   protocol.handle('app-media', async (request) => {
     try {
-      const url = request.url.replace('app-media://', '').replace(/\/+$/, '');
-      const appMediaPath = getAppAssetPath(__dirname, url);
+      const url = decodeURIComponent(request.url.replace('app-media://', '').replace(/\/+$/, ''));
 
-      if (!existsSync(appMediaPath)) {
-        logger.error(`App media file not found: ${url}`);
+      // Security: prevent directory traversal
+      const safeFilename = path.basename(url);
+      if (safeFilename !== url || url.includes('..')) {
+        logger.error(`Blocked path traversal attempt: ${url}`);
+        return new Response('Forbidden', { status: 403 });
+      }
+
+      const appMediaPath = getAppAssetPath(__dirname, safeFilename);
+
+      if (!(await fileExists(appMediaPath))) {
+        logger.error(`App media file not found: ${safeFilename}`);
         return new Response('File not found', { status: 404 });
       }
 
-      logger.info(`Serving app media: ${appMediaPath}`);
       return net.fetch(`file://${appMediaPath}`);
     } catch (error) {
       logger.error('Error serving app media file', error as Error);
@@ -422,7 +428,7 @@ app.on('ready', async () => {
   standUpTimer = new StandUpTimer();
 
   // Setup IPC handlers BEFORE creating window
-  handleIPC(settingsStore, cycleManager!, appMonitor!, standUpTimer);
+  handleIPC(settingsStore, cycleManager!, standUpTimer, () => mainWindow);
 
   // Close splash window and show main window
   closeSplashWindow();
@@ -483,11 +489,12 @@ app.on('activate', () => {
 
 app.on('before-quit', () => {
   isQuitting = true;
+  if (trayUpdateInterval) {
+    clearInterval(trayUpdateInterval);
+    trayUpdateInterval = null;
+  }
   if (cycleManager) {
     cycleManager.stop();
-  }
-  if (appMonitor) {
-    appMonitor.stop();
   }
   if (standUpTimer) {
     standUpTimer.stop();
@@ -495,7 +502,6 @@ app.on('before-quit', () => {
   if (tray) {
     tray.destroy();
   }
-  // Unregister all global shortcuts
   globalShortcut.unregisterAll();
 });
 

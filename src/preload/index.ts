@@ -46,11 +46,6 @@ const api = {
   uploadLogo: () => ipcRenderer.invoke('logo:upload'),
   resolveLogoPath: (path: string) => ipcRenderer.invoke('logo:resolvePath', path),
 
-  // App monitoring
-  getAvailableApps: () => ipcRenderer.invoke('apps:getAvailable'),
-  scanInstalledApps: () => ipcRenderer.invoke('apps:scan'),
-  getAppStates: () => ipcRenderer.invoke('apps:getStates'),
-
   // Event listeners
   onCycleUpdate: (callback: (payload: import('../shared/types').CycleUpdate) => void) => {
     ipcRenderer.on('cycle:update', (_event, payload) => callback(payload));
@@ -73,10 +68,24 @@ const api = {
   },
   // Stand up reminder
   dismissStandUp: () => ipcRenderer.send('standup:dismiss'),
+  testStandUp: () => ipcRenderer.send('standup:test'),
   // Pre-lock warning
   dismissPreLock: () => ipcRenderer.send('prelock:dismiss'),
+  skipPreLock: () => ipcRenderer.send('prelock:skip'),
+  testPreLock: () => ipcRenderer.send('prelock:test'),
   removeAllListeners: (channel: string) => {
-    ipcRenderer.removeAllListeners(channel);
+    // Security: Only allow removing listeners on known channels (Electron security rec #20)
+    const allowedChannels = [
+      'cycle:update',
+      'cycle:phase-changed',
+      'window:close',
+      'window:show',
+      'lock:init',
+      'lock:update',
+    ];
+    if (allowedChannels.includes(channel)) {
+      ipcRenderer.removeAllListeners(channel);
+    }
   },
 };
 

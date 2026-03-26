@@ -4,19 +4,27 @@ import { CycleManager } from './cycle-manager';
 import { validateSettingsInput } from '../shared/ipc';
 import { getAutoStart, setAutoStart } from './autostart';
 import { Logger } from './logger';
-import { AppMonitor } from './app-monitor';
 import { StandUpTimer } from './standup-timer';
+import { getErrorMessage } from '../shared/errors';
 import path from 'path';
 import fs from 'fs/promises';
-import { existsSync } from 'fs';
+
+async function dirExists(dirPath: string): Promise<boolean> {
+  try {
+    await fs.access(dirPath);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 const logger = new Logger('ipc');
 
 export function handleIPC(
   settingsStore: SettingsStore,
   cycleManager: CycleManager,
-  appMonitor?: AppMonitor,
-  standUpTimer?: StandUpTimer
+  standUpTimer?: StandUpTimer,
+  getMainWindow?: () => BrowserWindow | null
 ): void {
   /**
    * Settings endpoints
@@ -103,12 +111,47 @@ export function handleIPC(
     logger.info('Stand up window dismissed via IPC');
   });
 
+  ipcMain.on('standup:test', () => {
+    const settings = settingsStore.getSettings();
+    standUpTimer?.window.show(settings.standUpPosition ?? 'center-center');
+    logger.info('Stand up window triggered via test');
+  });
+
   /**
    * Pre-lock warning endpoints
    */
   ipcMain.on('prelock:dismiss', () => {
     cycleManager.closePreLockWarning();
     logger.info('Pre-lock warning dismissed via IPC');
+  });
+
+  ipcMain.on('prelock:skip', () => {
+    cycleManager.closePreLockWarning();
+    cycleManager.reset();
+
+    // Explicitly push updated status to main window since the skip
+    // originates from the overlay window, not the dashboard
+    const win = getMainWindow?.();
+    if (win && !win.isDestroyed()) {
+      const status = cycleManager.getStatus();
+      win.webContents.send('cycle:phase-changed', status.phase);
+      win.webContents.send('cycle:update', {
+        phase: status.phase,
+        remainingMs: status.remainingMs,
+        totalMs: status.totalMs,
+      });
+    }
+
+    logger.info('Current lock skipped via pre-lock warning');
+  });
+
+  ipcMain.on('prelock:test', () => {
+    const settings = settingsStore.getSettings();
+    const reminders = settings.preLockReminders ?? [5];
+    const lastMinute = Math.min(...reminders);
+    const showSkip = settings.preLockSkipEnabled ?? false;
+    cycleManager.showPreLockWarning(lastMinute, showSkip);
+    logger.info('Pre-lock warning triggered via test');
   });
 
   /**
@@ -160,10 +203,16 @@ export function handleIPC(
    */
   ipcMain.handle('app:openExternal', async (_event, url: string) => {
     try {
+      // Security: Only allow http/https URLs (Electron security rec #15)
+      const parsed = new URL(url);
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+        throw new Error(`Blocked non-HTTP URL: ${parsed.protocol}`);
+      }
+
       await shell.openExternal(url);
       logger.info(`Opened external URL: ${url}`);
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      const errorMsg = getErrorMessage(error);
       logger.error(`Failed to open external URL: ${url}`, new Error(errorMsg));
       throw error;
     }
@@ -178,7 +227,7 @@ export function handleIPC(
       await shell.openPath(logsPath);
       logger.info('Opened logs folder');
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      const errorMsg = getErrorMessage(error);
       logger.error('Failed to open logs folder', new Error(errorMsg));
       throw error;
     }
@@ -192,7 +241,7 @@ export function handleIPC(
       const mediaDir = path.join(app.getPath('userData'), 'media');
 
       // Ensure media directory exists
-      if (!existsSync(mediaDir)) {
+      if (!(await dirExists(mediaDir))) {
         await fs.mkdir(mediaDir, { recursive: true });
         return [];
       }
@@ -206,7 +255,7 @@ export function handleIPC(
       // Return relative paths that can be used in the app
       return imageFiles.map((file) => `./${file}`);
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      const errorMsg = getErrorMessage(error);
       logger.error('Failed to get available media', new Error(errorMsg));
       return [];
     }
@@ -229,7 +278,7 @@ export function handleIPC(
       const mediaDir = path.join(app.getPath('userData'), 'media');
 
       // Ensure media directory exists
-      if (!existsSync(mediaDir)) {
+      if (!(await dirExists(mediaDir))) {
         await fs.mkdir(mediaDir, { recursive: true });
       }
 
@@ -241,7 +290,7 @@ export function handleIPC(
       logger.info(`Logo uploaded: ${fileName}`);
       return { success: true, filename: `./${fileName}` };
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      const errorMsg = getErrorMessage(error);
       logger.error('Failed to upload logo', new Error(errorMsg));
       return { success: false, error: errorMsg };
     }
@@ -272,81 +321,10 @@ export function handleIPC(
       logger.info(`Resolved ${relativePath} to ${resolved}`);
       return resolved;
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      const errorMsg = getErrorMessage(error);
       logger.error('Failed to resolve logo path', new Error(errorMsg));
       return relativePath; // Return original path as fallback
     }
   });
 
-  /**
-   * App monitoring endpoints
-   */
-  ipcMain.handle('apps:getAvailable', async () => {
-    if (!appMonitor) {
-      logger.warn('App monitor not available');
-      return [];
-    }
-    try {
-      // First try to get from app monitor's cache
-      let apps = appMonitor.getInstalledApps();
-
-      // If no apps in memory, try to load from settings
-      if (apps.length === 0) {
-        const settings = settingsStore.getSettings();
-        if (settings.installedApps && settings.installedApps.length > 0) {
-          logger.info('Loading apps from settings cache');
-          appMonitor.loadInstalledApps(settings.installedApps);
-          apps = appMonitor.getInstalledApps();
-        }
-      }
-
-      return apps.map((app) => ({ id: app.id, name: app.name, category: app.category }));
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-      logger.error('Failed to get available apps', new Error(errorMsg));
-      return [];
-    }
-  });
-
-  ipcMain.handle('apps:scan', async () => {
-    if (!appMonitor) {
-      logger.warn('App monitor not available');
-      return [];
-    }
-    try {
-      logger.info('Scanning for installed apps via IPC');
-      const apps = await appMonitor.scanInstalledApps();
-
-      // Save to settings (also happens via callback, but doing it here ensures it's immediate)
-      const appsData = apps.map((app) => ({
-        id: app.id,
-        name: app.name,
-        category: app.category,
-        processNames: app.processNames,
-      }));
-      settingsStore.setSetting('installedApps', appsData);
-      settingsStore.setSetting('lastAppScan', Date.now());
-      logger.info(`Saved ${apps.length} installed apps to settings via IPC`);
-
-      return apps.map((app) => ({ id: app.id, name: app.name, category: app.category }));
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-      logger.error('Failed to scan apps', new Error(errorMsg));
-      return [];
-    }
-  });
-
-  ipcMain.handle('apps:getStates', () => {
-    if (!appMonitor) {
-      logger.warn('App monitor not available');
-      return [];
-    }
-    try {
-      return appMonitor.getStates();
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-      logger.error('Failed to get app states', new Error(errorMsg));
-      return [];
-    }
-  });
 }

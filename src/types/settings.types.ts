@@ -41,16 +41,12 @@ export interface Settings {
   enableLogging: boolean;
   theme?: 'light' | 'dark';
   customization?: CustomizationSettings;
-  excludedApps?: string[]; // Array of app IDs to monitor and pause cycle for
-  excludedAppsViewMode?: 'list' | 'grid'; // View mode preference for excluded apps list
-  lastAppScan?: number; // Timestamp of last app scan (milliseconds since epoch)
-  appScanInterval?: number; // Days between scans (10-30) or 0 for disabled (manual only)
-  installedApps?: Array<{ id: string; name: string; category: string; processNames: string[] }>; // Cached installed apps data
   standUpEnabled?: boolean; // Whether stand up reminders are enabled
   standUpInterval?: number; // Minutes between stand up reminders (1-120)
   standUpPosition?: StandUpPosition; // Position of the stand up reminder window
   preLockWarningEnabled?: boolean; // Whether to show a warning before the lock screen
-  preLockWarningMinutes?: number; // Minutes before lock to show the warning (1-30)
+  preLockReminders?: number[]; // Minutes before lock for each reminder (up to 3, values: 1, 3, or 5)
+  preLockSkipEnabled?: boolean; // Whether the last reminder shows a "Skip Lock" button
 }
 
 export const DEFAULT_CUSTOMIZATION: CustomizationSettings = {
@@ -85,14 +81,10 @@ export const DEFAULT_SETTINGS: Settings = {
   enableLogging: false,
   theme: 'light',
   customization: DEFAULT_CUSTOMIZATION,
-  excludedApps: [],
-  excludedAppsViewMode: 'list',
-  lastAppScan: 0,
-  appScanInterval: 30, // Default to 30 days
-  installedApps: [],
   standUpEnabled: false,
   standUpInterval: 30, // Default to 30 minutes
   standUpPosition: 'center-center',
   preLockWarningEnabled: false,
-  preLockWarningMinutes: 5, // Warn 5 minutes before lock
+  preLockReminders: [5],
+  preLockSkipEnabled: false,
 };
