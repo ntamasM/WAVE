@@ -36,8 +36,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
-      - name: Build unpacked app
-        run: pnpm run build:unpacked
+      - name: Build renderer
+        run: pnpm run build
+
+      - name: Build unpacked (x64 + ia32)
+        run: electron-builder --win --config electron-builder.yml
 
       - name: Extract version from package.json
         id: version
@@ -45,21 +48,41 @@ jobs:
           $version = (Get-Content package.json | ConvertFrom-Json).version
           echo "VERSION=$version" >> $env:GITHUB_OUTPUT
 
-      - name: Pack with Velopack
+      - name: Pack x64 with Velopack
         run: |
           vpk pack `
             --packId com.ntamadakis.wave `
             --packTitle WAVE `
             --packVersion ${{ steps.version.outputs.VERSION }} `
-            --packDir dist/win-unpacked `
+            --packDir dist/win-x64-unpacked `
             --mainExe WAVE.exe `
-            --icon dist/.icon-ico/icon.ico
+            --icon dist/.icon-ico/icon.ico `
+            --outputDir Releases-x64
 
-      - name: Upload to GitHub Releases
+      - name: Pack ia32 with Velopack
+        run: |
+          vpk pack `
+            --packId com.ntamadakis.wave-x86 `
+            --packTitle "WAVE (32-bit)" `
+            --packVersion ${{ steps.version.outputs.VERSION }} `
+            --packDir dist/win-ia32-unpacked `
+            --mainExe WAVE.exe `
+            --icon dist/.icon-ico/icon.ico `
+            --outputDir Releases-x86
+
+      - name: Upload x64 to GitHub Releases
         run: |
           vpk upload github `
             --repoUrl https://github.com/ntamasM/WAVE `
             --publish `
             --releaseName "WAVE v${{ steps.version.outputs.VERSION }}" `
             --tag ${{ github.ref_name }} `
-            --token ${{ secrets.GITHUB_TOKEN }}
+            --token ${{ secrets.GITHUB_TOKEN }} `
+            --outputDir Releases-x64
+
+      - name: Upload ia32 assets to GitHub Releases
+        run: |
+          $files = (Get-ChildItem Releases-x86 -File).FullName
+          gh release upload ${{ github.ref_name }} $files --clobber
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
