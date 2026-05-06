@@ -53,7 +53,7 @@ jobs:
             --packVersion ${{ steps.version.outputs.VERSION }} `
             --packDir dist/win-x64-unpacked `
             --mainExe WAVE.exe `
-            --icon assets/app-media/Wave--icon.png
+            --icon dist/.icon-ico/icon.ico
 
       - name: Upload to GitHub Releases
         run: |
