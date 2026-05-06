@@ -61,6 +61,5 @@ jobs:
             --repoUrl https://github.com/ntamasM/WAVE `
             --publish `
             --releaseName "WAVE v${{ steps.version.outputs.VERSION }}" `
-            --tag ${{ github.ref_name }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            --tag ${{ github.ref_name }} `
+            --token ${{ secrets.GITHUB_TOKEN }}
