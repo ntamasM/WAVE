@@ -27,6 +27,9 @@
     "react-toastify": "^11.0.5",
     "velopack": "0.0.1589-ga2c5a97"
   },
+  "pnpm": {
+    "ignoredBuiltDependencies": ["electron", "esbuild"]
+  },
   "devDependencies": {
     "@electron-toolkit/preload": "^3.0.0",
     "@electron-toolkit/utils": "^3.0.0",
