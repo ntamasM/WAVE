@@ -44,7 +44,6 @@ win:
     - target: dir
       arch:
         - x64
-        - ia32
   icon: assets/app-media/Wave--icon.png
   publisherName: 'Manolis Ntamadakis'
 electronLanguages:

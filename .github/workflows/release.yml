@@ -36,17 +36,20 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
-      - name: Build renderer
-        run: pnpm run build
-
-      - name: Build unpacked (x64 + ia32)
-        run: pnpm exec electron-builder --win --config electron-builder.yml
-
       - name: Extract version from package.json
         id: version
         run: |
           $version = (Get-Content package.json | ConvertFrom-Json).version
           echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Build renderer (shared)
+        run: pnpm run build
+
+      # ── x64 ──────────────────────────────────────────────────────────────────
+
+      - name: Build unpacked x64
+        run: pnpm exec electron-builder --win --x64 --config electron-builder.yml
+        # electron-builder outputs x64 to dist/win-unpacked (no arch suffix)
 
       - name: Pack x64 with Velopack
         run: |
@@ -54,10 +57,16 @@ jobs:
             --packId com.ntamadakis.wave `
             --packTitle WAVE `
             --packVersion ${{ steps.version.outputs.VERSION }} `
-            --packDir dist/win-x64-unpacked `
+            --packDir dist/win-unpacked `
             --mainExe WAVE.exe `
             --icon dist/.icon-ico/icon.ico `
             --outputDir Releases-x64
+
+      # ── ia32 ─────────────────────────────────────────────────────────────────
+
+      - name: Build unpacked ia32
+        run: pnpm exec electron-builder --win --ia32 --config electron-builder.yml
+        # electron-builder outputs ia32 to dist/win-ia32-unpacked
 
       - name: Pack ia32 with Velopack
         run: |
@@ -69,6 +78,8 @@ jobs:
             --mainExe WAVE.exe `
             --icon dist/.icon-ico/icon.ico `
             --outputDir Releases-x86
+
+      # ── upload ────────────────────────────────────────────────────────────────
 
       - name: Upload x64 to GitHub Releases
         run: |
