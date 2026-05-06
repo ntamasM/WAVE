@@ -27,8 +27,8 @@ importers:
         specifier: ^11.0.5
         version: 11.0.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       velopack:
-        specifier: 0.0.1589-ga2c5a97
-        version: 0.0.1589-ga2c5a97
+        specifier: 0.0.1298
+        version: 0.0.1298
     devDependencies:
       '@electron-toolkit/preload':
         specifier: ^3.0.0
@@ -416,8 +416,8 @@ packages:
     resolution: {integrity: sha512-9QOtNffcOF/c1seMCDnjckb3R9WHcG34tky+FHpNKKCW0wc/scYLwMtO+ptyGUfMW0/b/n4qRiALlaFHc9Oj7Q==}
     engines: {node: '>= 10.0.0'}
 
-  '@neon-rs/load@0.2.6':
-    resolution: {integrity: sha512-7p8j+guEhGTJNJISgmHO0homqGYAc0SDfmgGZfluMcQnimcceMY87b4hdqufp+7YmsOVC4W/JvT3/Tpi3/gy+Q==}
+  '@neon-rs/load@0.1.82':
+    resolution: {integrity: sha512-H4Gu2o5kPp+JOEhRrOQCnJnf7X6sv9FBLttM/wSbb4efsgFWeHzfU/ItZ01E5qqEk+U6QGdeVO7lxXIAtYHr5A==}
 
   '@nodelib/fs.scandir@2.1.5':
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
@@ -713,6 +713,7 @@ packages:
   '@xmldom/xmldom@0.8.11':
     resolution: {integrity: sha512-cQzWCtO6C8TQiYl1ruKNn2U6Ao4o4WBBcbL61yJl84x+j5sOWWFU9X7DpND8XZG3daDppSsigMdfAIl2upQBRw==}
     engines: {node: '>=10.0.0'}
+    deprecated: this version has critical issues, please update to the latest version
 
   acorn-jsx@5.3.2:
     resolution: {integrity: sha512-rq9s+JNhf0IChjtDXxllJ7g41oZk5SlXtp0LHwyA5cejwn7vKmKp4pPri6YEePv2PU65sAsegbXtIinmDFDXgQ==}
@@ -2267,9 +2268,9 @@ packages:
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
 
-  velopack@0.0.1589-ga2c5a97:
-    resolution: {integrity: sha512-W3YJcDt4OkudoQfFAfRxGiz0E5TXABaop2BQh6doi+/YfhLrvoAQSsZD+hGm4muCnHffiZNa0kUctw0RVmDW0A==}
-    engines: {node: '>=20.0.0 <26.0.0'}
+  velopack@0.0.1298:
+    resolution: {integrity: sha512-rG1pdRLpl5B/FeV2NS9Ewp4qpo3TzxN0rmwp5e284Ee/hhDITUn15eNeoCUp2hUi8DSf6JEMpbx2I3vuRitafg==}
+    engines: {node: '>=18.0.0 <=22.16.0'}
 
   verror@1.10.1:
     resolution: {integrity: sha512-veufcmxri4e3XSrT0xwfUR7kguIkaxBeosDg00yDWhk49wdwkSUrvvsm7nc75e1PUyvIeZj6nS8VQRYz2/S4Xg==}
@@ -2691,7 +2692,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@neon-rs/load@0.2.6': {}
+  '@neon-rs/load@0.1.82': {}
 
   '@nodelib/fs.scandir@2.1.5':
     dependencies:
@@ -4675,9 +4676,9 @@ snapshots:
 
   util-deprecate@1.0.2: {}
 
-  velopack@0.0.1589-ga2c5a97:
+  velopack@0.0.1298:
     dependencies:
-      '@neon-rs/load': 0.2.6
+      '@neon-rs/load': 0.1.82
 
   verror@1.10.1:
     dependencies:

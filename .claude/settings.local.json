@@ -5,7 +5,8 @@
       "WebFetch(domain:docs.velopack.io)",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:www.velopack.io)",
-      "Bash(Remove-Item *)"
+      "Bash(Remove-Item *)",
+      "PowerShell(npm view *)"
     ]
   }
 }
