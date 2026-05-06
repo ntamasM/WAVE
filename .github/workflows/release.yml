@@ -51,7 +51,7 @@ jobs:
             --packId com.ntamadakis.wave `
             --packTitle WAVE `
             --packVersion ${{ steps.version.outputs.VERSION }} `
-            --packDir dist/win-x64-unpacked `
+            --packDir dist/win-unpacked `
             --mainExe WAVE.exe `
             --icon dist/.icon-ico/icon.ico
 
