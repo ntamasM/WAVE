@@ -14,6 +14,8 @@ import {
   FaSun,
   FaArrowUp,
   FaBell,
+  FaSync,
+  FaDownload,
 } from 'react-icons/fa';
 import { showSuccess, showError, showInfo } from '../lib/toast';
 import { NumberInput } from './NumberInput';
@@ -27,12 +29,51 @@ export const SettingsForm: React.FC = () => {
   const [workHours, setWorkHours] = useState(Math.floor(settings.workHours));
   const [workMinutes, setWorkMinutes] = useState(Math.round((settings.workHours % 1) * 60));
 
+  // Update state
+  const [appVersion, setAppVersion] = useState('');
+  const [updateStatus, setUpdateStatus] = useState<'idle' | 'checking' | 'downloading' | 'ready' | 'error'>('idle');
+  const [pendingUpdateInfo, setPendingUpdateInfo] = useState<unknown>(null);
+
   // Update localSettings when settings change (on load)
   React.useEffect(() => {
     setLocalSettings(settings);
     setWorkHours(Math.floor(settings.workHours));
     setWorkMinutes(Math.round((settings.workHours % 1) * 60));
   }, [settings]);
+
+  React.useEffect(() => {
+    window.waveAPI.getVersion().then(setAppVersion).catch(() => {});
+  }, []);
+
+  const handleCheckForUpdates = async () => {
+    setUpdateStatus('checking');
+    try {
+      const info = await window.waveAPI.checkForUpdates();
+      if (!info) {
+        showInfo('WAVE is up to date!');
+        setUpdateStatus('idle');
+        return;
+      }
+      setUpdateStatus('downloading');
+      await window.waveAPI.downloadUpdate(info);
+      setPendingUpdateInfo(info);
+      setUpdateStatus('ready');
+      showSuccess('Update downloaded — click "Restart & Update" to install.');
+    } catch (err) {
+      showError(`Update check failed: ${getErrorMessage(err)}`);
+      setUpdateStatus('error');
+      setTimeout(() => setUpdateStatus('idle'), 3000);
+    }
+  };
+
+  const handleApplyUpdate = async () => {
+    try {
+      await window.waveAPI.applyUpdate(pendingUpdateInfo);
+    } catch (err) {
+      showError(`Failed to apply update: ${getErrorMessage(err)}`);
+      setUpdateStatus('idle');
+    }
+  };
 
   const handleChange = <K extends keyof Settings>(field: K, value: Settings[K]) => {
     setLocalSettings({
@@ -491,6 +532,53 @@ export const SettingsForm: React.FC = () => {
                 <FaFolder className="h-4 w-4" />
                 Open Logs Folder
               </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Updates Section */}
+        <div className="section-card">
+          <div className="section-header">
+            <h3 className="section-subtitle">
+              <FaDownload className="icon-primary" />
+              Updates
+            </h3>
+            <p className="section-description">Keep WAVE up to date with the latest improvements</p>
+          </div>
+          <div className="section-body space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="form-label mb-0">Current Version</p>
+                <p className="text-sm text-secondary">{appVersion || '—'}</p>
+              </div>
+            </div>
+            <div className="pt-2 border-t border-bright-gray-200 dark:border-bright-gray-700">
+              {updateStatus === 'ready' ? (
+                <button
+                  type="button"
+                  onClick={handleApplyUpdate}
+                  className="btn-primary flex items-center gap-2"
+                >
+                  <FaDownload className="h-4 w-4" />
+                  Restart &amp; Update
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleCheckForUpdates}
+                  disabled={updateStatus === 'checking' || updateStatus === 'downloading'}
+                  className="btn-secondary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <FaSync
+                    className={`h-4 w-4 ${updateStatus === 'checking' || updateStatus === 'downloading' ? 'animate-spin' : ''}`}
+                  />
+                  {updateStatus === 'checking'
+                    ? 'Checking...'
+                    : updateStatus === 'downloading'
+                      ? 'Downloading...'
+                      : 'Check for Updates'}
+                </button>
+              )}
             </div>
           </div>
         </div>

@@ -19,6 +19,8 @@ export class CycleManager {
   private intervalId: NodeJS.Timeout | null = null;
   private getMainWindow: () => BrowserWindow | null;
   private systemWasAsleep = false;
+  private windowsLocked = false;
+  private pausedByScreenLock = false;
   private lockWindow: LockWindow;
   private preLockWindow: PreLockWindow;
   private firedReminders: Set<number> = new Set();
@@ -128,6 +130,36 @@ export class CycleManager {
     }
   }
 
+  onScreenLock(): void {
+    logger.info('Windows screen locked, pausing cycle');
+    this.windowsLocked = true;
+    this.preLockWindow.close();
+
+    if (this.state.phase === 'break') {
+      // Close WAVE lock screen — Windows lock screen is now active
+      this.lockWindow.close();
+      // Reset to a fresh work cycle, then pause it until unlock
+      this.state.phase = 'work';
+      this.state.workStartedAt = Date.now();
+      this.state.breakStartedAt = null;
+      this.firedReminders.clear();
+    }
+
+    if (this.state.phase !== 'paused') {
+      this.pausedByScreenLock = true;
+      this.pause();
+    }
+  }
+
+  onScreenUnlock(): void {
+    logger.info('Windows screen unlocked');
+    this.windowsLocked = false;
+    if (this.pausedByScreenLock) {
+      this.pausedByScreenLock = false;
+      this.resume();
+    }
+  }
+
   private tick(): void {
     const status = this.getStatus();
 
@@ -198,6 +230,15 @@ export class CycleManager {
   }
 
   private async executeLock(): Promise<void> {
+    if (this.windowsLocked) {
+      logger.info('Windows is locked — skipping WAVE break, resetting work cycle');
+      this.state.phase = 'work';
+      this.state.workStartedAt = Date.now();
+      this.state.breakStartedAt = null;
+      this.firedReminders.clear();
+      return;
+    }
+
     try {
       logger.info('Showing lock window...');
 

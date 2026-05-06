@@ -8,6 +8,7 @@ export default defineConfig({
       outDir: 'out/main',
       minify: true,
       rollupOptions: {
+        external: ['velopack'],
         input: {
           index: resolve(__dirname, 'src/main/index.ts'),
         },
@@ -22,6 +23,7 @@ export default defineConfig({
       outDir: 'out/preload',
       minify: true,
       rollupOptions: {
+        external: ['velopack'],
         input: {
           index: resolve(__dirname, 'src/preload/index.ts'),
         },

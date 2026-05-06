@@ -1,3 +1,7 @@
+import { VelopackApp } from 'velopack';
+// Must run before any other Electron code — handles install/uninstall/update lifecycle hooks
+VelopackApp.build().run();
+
 import { app, BrowserWindow, Menu, Tray, nativeImage, powerMonitor, protocol, net, globalShortcut, shell, session } from 'electron';
 import path, { join } from 'path';
 import { is } from '@electron-toolkit/utils';
@@ -10,6 +14,7 @@ import { setAutoStart, getAutoStart } from './autostart';
 import { getAppAssetPath, getMediaPath } from './resources';
 import { getErrorMessage } from '../shared/errors';
 import { formatTrayTime } from '../shared/format';
+import { checkAndApplyUpdatesSilently } from './updater';
 import fs from 'fs/promises';
 
 // Disable default application menu early to avoid startup cost (Electron perf rec #8)
@@ -445,6 +450,9 @@ app.on('ready', async () => {
     standUpSettings.standUpPosition ?? 'center-center'
   );
 
+  // Background update check — non-blocking, shows OS notification when ready
+  void checkAndApplyUpdatesSilently();
+
   // Register global shortcut to skip lock (Ctrl+Shift+U+L)
   const shortcutRegistered = globalShortcut.register('CommandOrControl+Shift+U+L', () => {
     logger.info('Global shortcut triggered: Ctrl+Shift+U+L - Skipping lock');
@@ -514,4 +522,15 @@ powerMonitor.on('suspend', () => {
 powerMonitor.on('resume', () => {
   logger.info('System resumed');
   cycleManager?.onSystemResume();
+});
+
+// Pause cycle when Windows locks; resume when unlocked
+powerMonitor.on('lock-screen', () => {
+  logger.info('Screen locked');
+  cycleManager?.onScreenLock();
+});
+
+powerMonitor.on('unlock-screen', () => {
+  logger.info('Screen unlocked');
+  cycleManager?.onScreenUnlock();
 });

@@ -1,0 +1,66 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release-windows:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup .NET (required for vpk CLI)
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install vpk CLI
+        run: dotnet tool install -g vpk
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build unpacked app
+        run: pnpm run build:unpacked
+
+      - name: Extract version from package.json
+        id: version
+        run: |
+          $version = (Get-Content package.json | ConvertFrom-Json).version
+          echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Pack with Velopack
+        run: |
+          vpk pack `
+            --packId com.ntamadakis.wave `
+            --packTitle WAVE `
+            --packVersion ${{ steps.version.outputs.VERSION }} `
+            --packDir dist/win-x64-unpacked `
+            --mainExe WAVE.exe `
+            --icon assets/app-media/Wave--icon.png
+
+      - name: Upload to GitHub Releases
+        run: |
+          vpk upload github `
+            --repoUrl https://github.com/ntamasM/WAVE `
+            --publish `
+            --releaseName "WAVE v${{ steps.version.outputs.VERSION }}" `
+            --tag ${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

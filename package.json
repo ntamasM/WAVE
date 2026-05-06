@@ -1,6 +1,6 @@
 {
   "name": "wave",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "WAVE (Work And Vital Energy) - Minimalist Windows productivity utility that enforces breaks by locking the OS",
   "main": "out/main/index.js",
   "homepage": "./",
@@ -13,11 +13,10 @@
     "lint": "eslint src --ext .ts,.tsx",
     "format": "prettier --write .",
     "preview": "electron-vite preview",
-    "build:win": "pnpm run build && electron-builder --win --x64 --config electron-builder.yml",
-    "build:win:portable": "pnpm run build && electron-builder --win portable --x64 --config electron-builder.yml",
-    "build:win:installer": "pnpm run build && electron-builder --win nsis --x64 --config electron-builder.yml",
-    "package:win": "pnpm run build && electron-builder --win --config electron-builder.yml",
-    "dist:win": "pnpm run package:win"
+    "build:unpacked": "pnpm run build && electron-builder --win --x64 --config electron-builder.yml",
+    "release:pack": "vpk pack --packId com.ntamadakis.wave --packTitle WAVE --packVersion $npm_package_version --packDir dist/win-x64-unpacked --mainExe WAVE.exe --icon assets/app-media/Wave--icon.png",
+    "release:publish": "vpk upload github --repoUrl https://github.com/ntamasM/WAVE --publish",
+    "release": "pnpm run build:unpacked && pnpm run release:pack && pnpm run release:publish"
   },
   "dependencies": {
     "electron-store": "^8.1.0",
@@ -25,7 +24,8 @@
     "react-dom": "^18.2.0",
     "react-icons": "^5.5.0",
     "react-router-dom": "^6.20.0",
-    "react-toastify": "^11.0.5"
+    "react-toastify": "^11.0.5",
+    "velopack": "0.0.1589-ga2c5a97"
   },
   "devDependencies": {
     "@electron-toolkit/preload": "^3.0.0",

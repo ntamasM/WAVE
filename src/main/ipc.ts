@@ -1,4 +1,5 @@
 import { ipcMain, BrowserWindow, shell, app, dialog } from 'electron';
+import { UpdateManager } from 'velopack';
 import { SettingsStore } from './settings-store';
 import { CycleManager } from './cycle-manager';
 import { validateSettingsInput } from '../shared/ipc';
@@ -6,6 +7,7 @@ import { getAutoStart, setAutoStart } from './autostart';
 import { Logger } from './logger';
 import { StandUpTimer } from './standup-timer';
 import { getErrorMessage } from '../shared/errors';
+import { UPDATE_URL } from './updater';
 import path from 'path';
 import fs from 'fs/promises';
 
@@ -171,6 +173,30 @@ export function handleIPC(
    */
   ipcMain.handle('app:getVersion', () => {
     return app.getVersion();
+  });
+
+  /**
+   * Velopack update endpoints
+   */
+  ipcMain.handle('velopack:checkForUpdates', async () => {
+    try {
+      const um = new UpdateManager(UPDATE_URL);
+      return await um.checkForUpdatesAsync();
+    } catch (e) {
+      logger.warn(`checkForUpdates failed: ${String(e)}`);
+      return null;
+    }
+  });
+
+  ipcMain.handle('velopack:downloadUpdate', async (_event, updateInfo) => {
+    const um = new UpdateManager(UPDATE_URL);
+    await um.downloadUpdateAsync(updateInfo);
+  });
+
+  ipcMain.handle('velopack:applyUpdate', async (_event, updateInfo) => {
+    const um = new UpdateManager(UPDATE_URL);
+    await um.waitExitThenApplyUpdate(updateInfo);
+    app.quit();
   });
 
   /**

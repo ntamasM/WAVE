@@ -73,6 +73,10 @@ const api = {
   dismissPreLock: () => ipcRenderer.send('prelock:dismiss'),
   skipPreLock: () => ipcRenderer.send('prelock:skip'),
   testPreLock: () => ipcRenderer.send('prelock:test'),
+  // Updates (Velopack)
+  checkForUpdates: () => ipcRenderer.invoke('velopack:checkForUpdates'),
+  downloadUpdate: (updateInfo: unknown) => ipcRenderer.invoke('velopack:downloadUpdate', updateInfo),
+  applyUpdate: (updateInfo: unknown) => ipcRenderer.invoke('velopack:applyUpdate', updateInfo),
   removeAllListeners: (channel: string) => {
     // Security: Only allow removing listeners on known channels (Electron security rec #20)
     const allowedChannels = [

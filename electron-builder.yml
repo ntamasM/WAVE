@@ -1,9 +1,8 @@
-appId: 'com.wave'
+appId: 'com.ntamadakis.wave'
 productName: 'WAVE'
 directories:
   buildResources: assets
   output: dist
-# Optimize file inclusion - only include necessary files
 files:
   - from: .
     to: .
@@ -26,12 +25,9 @@ files:
     to: .
     filter:
       - '**/*'
-# Only include runtime dependencies, exclude dev dependencies
 asarUnpack:
   - '**/*.node'
-# Optimize compression
 compression: maximum
-# Exclude unnecessary files
 extraMetadata:
   main: main/index.js
 extraResources:
@@ -45,37 +41,11 @@ extraResources:
       - '**/*'
 win:
   target:
-    - target: nsis
-      arch:
-        - x64
-    - target: portable
+    - target: dir
       arch:
         - x64
   icon: assets/app-media/Wave--icon.png
-  certificateFile: null
-  sign: null
-  signingHashAlgorithms: []
-  artifactName: '${productName}-${version}-${arch}-setup.${ext}'
   publisherName: 'Manolis Ntamadakis'
-  verifyUpdateCodeSignature: false
-# Optimize by including only English locale
 electronLanguages:
   - en
   - en-US
-nsis:
-  oneClick: false
-  allowToChangeInstallationDirectory: true
-  allowElevation: true
-  createDesktopShortcut: true
-  createStartMenuShortcut: true
-  shortcutName: WAVE
-  license: LICENSE
-  deleteAppDataOnUninstall: false
-  runAfterFinish: true
-  menuCategory: true
-  displayLanguageSelector: false
-  artifactName: '${productName}-${version}-setup.${ext}'
-  # Enable compression for NSIS installer
-  differentialPackage: true
-portable:
-  artifactName: '${productName}-${version}-portable.${ext}'
