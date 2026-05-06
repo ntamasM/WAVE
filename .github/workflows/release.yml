@@ -34,7 +34,7 @@ jobs:
         run: dotnet tool install -g vpk
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
 
       - name: Build unpacked app
         run: pnpm run build:unpacked
