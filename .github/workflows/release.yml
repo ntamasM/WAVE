@@ -48,7 +48,7 @@ jobs:
       # ── x64 ──────────────────────────────────────────────────────────────────
 
       - name: Build unpacked x64
-        run: pnpm exec electron-builder --win --x64 --config electron-builder.yml
+        run: pnpm exec electron-builder --win --x64 --config electron-builder.yml --publish never
         # electron-builder outputs x64 to dist/win-unpacked (no arch suffix)
 
       - name: Pack x64 with Velopack
@@ -65,7 +65,7 @@ jobs:
       # ── ia32 ─────────────────────────────────────────────────────────────────
 
       - name: Build unpacked ia32
-        run: pnpm exec electron-builder --win --ia32 --config electron-builder.yml
+        run: pnpm exec electron-builder --win --ia32 --config electron-builder.yml --publish never
         # electron-builder outputs ia32 to dist/win-ia32-unpacked
 
       - name: Pack ia32 with Velopack

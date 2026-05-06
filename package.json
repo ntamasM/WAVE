@@ -13,7 +13,7 @@
     "lint": "eslint src --ext .ts,.tsx",
     "format": "prettier --write .",
     "preview": "electron-vite preview",
-    "build:unpacked": "pnpm run build && electron-builder --win --x64 --config electron-builder.yml",
+    "build:unpacked": "pnpm run build && electron-builder --win --x64 --config electron-builder.yml --publish never",
     "release:pack": "vpk pack --packId com.ntamadakis.wave --packTitle WAVE --packVersion $npm_package_version --packDir dist/win-unpacked --mainExe WAVE.exe --icon dist/.icon-ico/icon.ico",
     "release:publish": "vpk upload github --repoUrl https://github.com/ntamasM/WAVE --publish",
     "release": "pnpm run build:unpacked && pnpm run release:pack && pnpm run release:publish"
