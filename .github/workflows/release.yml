@@ -40,7 +40,7 @@ jobs:
         run: pnpm run build
 
       - name: Build unpacked (x64 + ia32)
-        run: electron-builder --win --config electron-builder.yml
+        run: pnpm exec electron-builder --win --config electron-builder.yml
 
       - name: Extract version from package.json
         id: version
