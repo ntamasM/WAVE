@@ -31,6 +31,15 @@ export const About: React.FC = () => {
             Work And Vital Energy — Enforce focus through automated OS-level breaks
           </p>
           <p className="text-sm text-muted mt-2 font-medium">Version {version || '1.0.0'}</p>
+          <p className="text-xs text-muted mt-1">
+            Free &amp; open source &middot;{' '}
+            <button
+              onClick={() => handleOpenExternal(`${GITHUB_REPO_URL}/blob/main/LICENSE`)}
+              className="text-accent hover:underline cursor-pointer"
+            >
+              MIT License
+            </button>
+          </p>
         </div>
 
         {/* Description */}
@@ -225,10 +234,28 @@ export const About: React.FC = () => {
           </div>
         </div>
 
-        {/* License */}
+        {/* Open Source / License */}
         <div className="divider pt-6 text-center">
-          <p className="text-sm text-muted">Released under the MIT License</p>
-          <p className="text-xs text-muted mt-2">&copy; {new Date().getFullYear()} Manolis Ntamadakis. All rights reserved.</p>
+          <p className="text-sm text-secondary">
+            <strong>WAVE is free and open source software</strong> — released under the{' '}
+            <button
+              onClick={() => handleOpenExternal(`${GITHUB_REPO_URL}/blob/main/LICENSE`)}
+              className="text-accent hover:underline cursor-pointer font-medium"
+            >
+              MIT License
+            </button>
+            .
+          </p>
+          <p className="text-xs text-muted mt-2">
+            Source code:{' '}
+            <button
+              onClick={() => handleOpenExternal(GITHUB_REPO_URL)}
+              className="text-accent hover:underline cursor-pointer"
+            >
+              github.com/ntamasM/WAVE
+            </button>
+          </p>
+          <p className="text-xs text-muted mt-2">&copy; 2025-{new Date().getFullYear()} Manolis Ntamadakis</p>
         </div>
       </div>
     </div>

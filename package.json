@@ -7,6 +7,23 @@
   "productionDependencies": true,
   "author": "Manolis Ntamadakis <https://ntamadakis.gr/>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ntamasM/WAVE.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ntamasM/WAVE/issues"
+  },
+  "keywords": [
+    "electron",
+    "productivity",
+    "windows",
+    "break-reminder",
+    "pomodoro",
+    "focus",
+    "open-source",
+    "mit"
+  ],
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",

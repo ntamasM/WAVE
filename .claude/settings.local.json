@@ -19,7 +19,8 @@
       "Bash(curl -s -o /dev/null -w \"Repo page:        %{http_code}\\\\n\" https://github.com/ntamasM/WAVE)",
       "Bash(curl -s -o /dev/null -w \"API:              %{http_code}\\\\n\" https://api.github.com/repos/ntamasM/WAVE)",
       "Bash(curl -s -o /dev/null -w \"Releases page:    %{http_code}\\\\n\" https://github.com/ntamasM/WAVE/releases)",
-      "Bash(curl -s -o /dev/null -w \"Manolis profile:  %{http_code}\\\\n\" https://github.com/ntamasM)"
+      "Bash(curl -s -o /dev/null -w \"Manolis profile:  %{http_code}\\\\n\" https://github.com/ntamasM)",
+      "Bash(pnpm run *)"
     ]
   }
 }

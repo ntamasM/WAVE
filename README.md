@@ -1,6 +1,13 @@
 # WAVE (Work And Vital Energy)
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+[![Platform](https://img.shields.io/badge/platform-Windows%2010%2B-blue.svg)](#)
+[![Open Source](https://img.shields.io/badge/open%20source-%E2%9D%A4-red.svg)](https://github.com/ntamasM/WAVE)
+[![Latest Release](https://img.shields.io/github/v/release/ntamasM/WAVE)](https://github.com/ntamasM/WAVE/releases/latest)
+
 A minimalist Windows productivity utility that enforces focus breaks with fullscreen lock windows across all monitors. Runs in the background, auto-starts with Windows, and provides a modern dashboard for configuration.
+
+> **WAVE is free and open source software**, released under the [MIT License](./LICENSE). Source code lives at [github.com/ntamasM/WAVE](https://github.com/ntamasM/WAVE) — issues, pull requests, and ⭐ stars are welcome.
 
 ## What is WAVE?
 
@@ -498,14 +505,22 @@ WAVE/
 
 ## License
 
-MIT License (see LICENSE file).
+WAVE is released under the **[MIT License](./LICENSE)** — you are free to use, copy, modify, merge, publish, distribute, sublicense, and sell copies of the software, subject to the conditions in the license file.
+
+Copyright © 2025-2026 Manolis Ntamadakis.
+
+## Contributing
+
+Contributions are very welcome — this is an open-source project that lives off community input.
+
+- 🐛 **Found a bug?** Open an issue at [github.com/ntamasM/WAVE/issues](https://github.com/ntamasM/WAVE/issues).
+- 💡 **Have an idea?** Start a discussion or open a feature request issue.
+- 🔧 **Want to send a PR?** Fork the repo, branch from `main`, run `pnpm install && pnpm run dev`, and open a pull request when ready. See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full workflow.
+- ⭐ **Just want to help?** Starring the repo is the cheapest way to say thanks and helps others discover the project.
 
 ---
 
-**Version:** 1.0.0
-**Last Updated:** March 26, 2026
-**Platform:** Windows 10+
-**Status:** Stable
+**Platform:** Windows 10+ &nbsp;|&nbsp; **License:** MIT &nbsp;|&nbsp; **Source:** [github.com/ntamasM/WAVE](https://github.com/ntamasM/WAVE)
 
 ## Developer
 
@@ -513,3 +528,4 @@ MIT License (see LICENSE file).
 
 - Portfolio: [https://ntamadakis.gr/](https://ntamadakis.gr/)
 - Support Me: [https://ntamadakis.gr/support-me](https://ntamadakis.gr/support-me)
+- GitHub: [https://github.com/ntamasM](https://github.com/ntamasM)
