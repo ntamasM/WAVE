@@ -85,11 +85,14 @@ jobs:
             --outputDir Releases-x86
 
       # ── upload ────────────────────────────────────────────────────────────────
-      # Each upload sends its own channel-named feed file (releases.win-x64.json /
-      # releases.win-x86.json) so x64 installs can never pick up x86 builds and
-      # vice versa.
+      # Each channel writes its own feed file (releases.win-x64.json /
+      # releases.win-x86.json) so the two architectures never overwrite each
+      # other on the release page. vpk creates the release and uploads x64
+      # assets; gh attaches the ia32 assets to that same release afterwards.
+      # (vpk upload github --publish errors if the release already exists, so
+      # only the first call uses it.)
 
-      - name: Upload x64 channel to GitHub Releases
+      - name: Upload x64 channel to GitHub Releases (creates the release)
         run: |
           vpk upload github `
             --repoUrl https://github.com/ntamasM/WAVE `
@@ -100,13 +103,9 @@ jobs:
             --channel win-x64 `
             --outputDir Releases-x64
 
-      - name: Upload ia32 channel to GitHub Releases
+      - name: Upload ia32 channel assets to GitHub Releases
         run: |
-          vpk upload github `
-            --repoUrl https://github.com/ntamasM/WAVE `
-            --publish `
-            --releaseName "WAVE v${{ steps.version.outputs.VERSION }}" `
-            --tag ${{ github.ref_name }} `
-            --token ${{ secrets.GITHUB_TOKEN }} `
-            --channel win-x86 `
-            --outputDir Releases-x86
+          $files = (Get-ChildItem Releases-x86 -File).FullName
+          gh release upload ${{ github.ref_name }} $files --clobber
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
