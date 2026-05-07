@@ -5,7 +5,7 @@ import type { UpdateInfo } from 'velopack';
 
 const logger = new Logger('updater');
 
-export const UPDATE_URL = 'https://github.com/ntamasM/WAVE';
+export const UPDATE_URL = 'https://github.com/ntamasM/WAVE/releases/latest/download';
 
 export function createUpdateManager(): UpdateManager {
   return new UpdateManager(UPDATE_URL);

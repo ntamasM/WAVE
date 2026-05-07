@@ -9,7 +9,17 @@
       "PowerShell(npm view *)",
       "Bash(pnpm exec *)",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\Ntamas\\\\Desktop\\\\Personal\\\\windows-apps\\\\WAVE\" -Recurse -Include \"*window*\" -File)",
-      "Bash(Select-Object FullName)"
+      "Bash(Select-Object FullName)",
+      "Bash(curl -sLI \"https://github.com/ntamasM/WAVE/releases/latest/download/releases.win.json\")",
+      "Bash(curl -sL \"https://github.com/ntamasM/WAVE/releases/latest/download/releases.win.json\")",
+      "Bash(curl -sLI \"https://github.com/ntamasM/WAVE\")",
+      "Bash(curl -sI \"https://api.github.com/repos/ntamasM/WAVE\")",
+      "Bash(curl -sI \"https://api.github.com/repos/ntamasm/WAVE\")",
+      "Bash(curl -sI \"https://api.github.com/repos/ntamasM/wave\")",
+      "Bash(curl -s -o /dev/null -w \"Repo page:        %{http_code}\\\\n\" https://github.com/ntamasM/WAVE)",
+      "Bash(curl -s -o /dev/null -w \"API:              %{http_code}\\\\n\" https://api.github.com/repos/ntamasM/WAVE)",
+      "Bash(curl -s -o /dev/null -w \"Releases page:    %{http_code}\\\\n\" https://github.com/ntamasM/WAVE/releases)",
+      "Bash(curl -s -o /dev/null -w \"Manolis profile:  %{http_code}\\\\n\" https://github.com/ntamasM)"
     ]
   }
 }
