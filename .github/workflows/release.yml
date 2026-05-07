@@ -51,7 +51,7 @@ jobs:
         run: pnpm exec electron-builder --win --x64 --config electron-builder.yml --publish never
         # electron-builder outputs x64 to dist/win-unpacked (no arch suffix)
 
-      - name: Pack x64 with Velopack
+      - name: Pack x64 with Velopack (channel win-x64)
         run: |
           vpk pack `
             --packId com.ntamadakis.wave `
@@ -60,6 +60,7 @@ jobs:
             --packDir dist/win-unpacked `
             --mainExe WAVE.exe `
             --icon dist/.icon-ico/icon.ico `
+            --channel win-x64 `
             --outputDir Releases-x64
 
       # ── ia32 ─────────────────────────────────────────────────────────────────
@@ -71,20 +72,24 @@ jobs:
         run: pnpm exec electron-builder --win --ia32 --config electron-builder.yml --publish never
         # electron-builder outputs ia32 to dist/win-ia32-unpacked
 
-      - name: Pack ia32 with Velopack
+      - name: Pack ia32 with Velopack (channel win-x86)
         run: |
           vpk pack `
-            --packId com.ntamadakis.wave-x86 `
-            --packTitle "WAVE (32-bit)" `
+            --packId com.ntamadakis.wave `
+            --packTitle WAVE `
             --packVersion ${{ steps.version.outputs.VERSION }} `
             --packDir dist/win-ia32-unpacked `
             --mainExe WAVE.exe `
             --icon dist/.icon-ico/icon.ico `
+            --channel win-x86 `
             --outputDir Releases-x86
 
       # ── upload ────────────────────────────────────────────────────────────────
+      # Each upload sends its own channel-named feed file (releases.win-x64.json /
+      # releases.win-x86.json) so x64 installs can never pick up x86 builds and
+      # vice versa.
 
-      - name: Upload x64 to GitHub Releases
+      - name: Upload x64 channel to GitHub Releases
         run: |
           vpk upload github `
             --repoUrl https://github.com/ntamasM/WAVE `
@@ -92,11 +97,16 @@ jobs:
             --releaseName "WAVE v${{ steps.version.outputs.VERSION }}" `
             --tag ${{ github.ref_name }} `
             --token ${{ secrets.GITHUB_TOKEN }} `
+            --channel win-x64 `
             --outputDir Releases-x64
 
-      - name: Upload ia32 assets to GitHub Releases
+      - name: Upload ia32 channel to GitHub Releases
         run: |
-          $files = (Get-ChildItem Releases-x86 -File).FullName
-          gh release upload ${{ github.ref_name }} $files --clobber
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          vpk upload github `
+            --repoUrl https://github.com/ntamasM/WAVE `
+            --publish `
+            --releaseName "WAVE v${{ steps.version.outputs.VERSION }}" `
+            --tag ${{ github.ref_name }} `
+            --token ${{ secrets.GITHUB_TOKEN }} `
+            --channel win-x86 `
+            --outputDir Releases-x86
