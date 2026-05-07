@@ -5,6 +5,7 @@ import { DEFAULT_CUSTOMIZATION } from '../../types/settings.types';
 import type { CustomizationSettings } from '../../types/settings.types';
 import { showSuccess, showError, showInfo } from '../lib/toast';
 import { Separator } from '../components/Separator';
+import { LockScreenPreview } from '../components/LockScreenPreview';
 import {
   FaPalette,
   FaImage,
@@ -16,6 +17,7 @@ import {
   FaTimes,
   FaFolder,
   FaUpload,
+  FaEye,
 } from 'react-icons/fa';
 
 import type { LogoThumbnailProps } from '../../types/component.types';
@@ -159,6 +161,22 @@ export const Customization: React.FC = () => {
             <FaSave className="-ml-0.5 h-4 w-4" />
             Save Changes
           </button>
+        </div>
+      </div>
+
+      {/* Live Preview */}
+      <div className="section-card">
+        <div className="section-header">
+          <h3 className="section-subtitle">
+            <FaEye className="icon-primary" />
+            Live Preview
+          </h3>
+          <p className="section-description">
+            Real-time preview of the break lock screen — every change you make below appears here instantly
+          </p>
+        </div>
+        <div className="section-body">
+          <LockScreenPreview customization={localCustomization} resolvedLogoUrl={resolvedLogoUrl} />
         </div>
       </div>
 

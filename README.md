@@ -9,7 +9,8 @@ WAVE (Work And Vital Energy) is designed for professionals who struggle with tak
 ### Key Features
 
 - **Multi-Monitor Lock Windows**: Creates fullscreen lock windows on all displays simultaneously, covering taskbar and everything else
-- **Customizable Lock Screen**: Gradient background, custom logo upload, personalized title/subtitle, timer and progress bar colors, skip button styling
+- **Customizable Lock Screen**: Gradient background, custom logo upload, personalized title/subtitle, timer and progress bar colors, skip button styling — with a **live preview** on the Customization page that updates in real time as you edit
+- **Automatic Updates**: Background updates via [Velopack](https://velopack.io); new versions are downloaded silently and applied on next launch
 - **Multi-Display Support**: Automatically detects and locks all monitors — primary shows full UI, secondary displays show branded background
 - **Pre-Lock Warnings**: Up to 3 configurable reminders before the lock screen (at 5, 3, and 1 minutes before lock), with optional "Skip this lock" button on the last reminder to reset the countdown
 - **Stand Up Reminders**: Periodic overlay notifications to stand up and stretch, with 9-position placement and auto-dismiss

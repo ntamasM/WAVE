@@ -7,7 +7,9 @@
       "WebFetch(domain:www.velopack.io)",
       "Bash(Remove-Item *)",
       "PowerShell(npm view *)",
-      "Bash(pnpm exec *)"
+      "Bash(pnpm exec *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\Ntamas\\\\Desktop\\\\Personal\\\\windows-apps\\\\WAVE\" -Recurse -Include \"*window*\" -File)",
+      "Bash(Select-Object FullName)"
     ]
   }
 }

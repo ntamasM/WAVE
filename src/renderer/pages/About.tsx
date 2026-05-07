@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { FaGlobe, FaHeart, FaCode, FaLock, FaWindows, FaArrowUp, FaBell, FaPalette, FaClock } from 'react-icons/fa';
+import { FaGlobe, FaHeart, FaCode, FaLock, FaWindows, FaArrowUp, FaBell, FaPalette, FaClock, FaGithub, FaStar, FaSyncAlt } from 'react-icons/fa';
+
+const GITHUB_REPO_URL = 'https://github.com/ntamasM/WAVE';
 
 export const About: React.FC = () => {
   const [logoUrl, setLogoUrl] = useState<string>('');
@@ -45,7 +47,9 @@ export const About: React.FC = () => {
           <p className="text-secondary leading-relaxed">
             After configurable work periods, fullscreen lock windows appear on all monitors for a set break duration,
             displaying a countdown timer and optional skip button. The lock screen is fully customizable with gradient
-            backgrounds, custom logos, and personalized text.
+            backgrounds, custom logos, and personalized text — and a live preview on the Customization page lets you see
+            every change in real time. Stand-up reminders and pre-lock warnings keep you in the loop without hijacking
+            your keyboard, and the app updates itself automatically in the background so you always have the latest fixes.
           </p>
         </div>
 
@@ -67,7 +71,8 @@ export const About: React.FC = () => {
               <FaPalette className="icon-primary mt-1 flex-shrink-0" />
               <span>
                 <strong>Customizable Lock Screen</strong> — Gradient backgrounds, custom logo, personalized title and
-                subtitle, timer and progress bar colors, skip button styling
+                subtitle, timer and progress bar colors, skip button styling, all with a live preview that updates as
+                you edit
               </span>
             </li>
             <li className="flex items-start gap-3 p-3 bg-vista-blue-50 dark:bg-vista-blue-900/20 rounded-lg">
@@ -95,6 +100,13 @@ export const About: React.FC = () => {
               <span>
                 <strong>System Integration</strong> — Autostart with Windows, system tray with live timer, dark/light
                 theme, diagnostic logging
+              </span>
+            </li>
+            <li className="flex items-start gap-3 p-3 bg-vista-blue-50 dark:bg-vista-blue-900/20 rounded-lg">
+              <FaSyncAlt className="icon-primary mt-1 flex-shrink-0" />
+              <span>
+                <strong>Automatic Updates</strong> — Powered by Velopack. New versions are downloaded and applied in the
+                background, so you stay on the latest release without lifting a finger
               </span>
             </li>
           </ul>
@@ -155,6 +167,34 @@ export const About: React.FC = () => {
               <p className="font-semibold text-primary mb-1">Platform</p>
               <p className="text-secondary">Windows 10+</p>
             </div>
+          </div>
+        </div>
+
+        {/* Support the project */}
+        <div className="divider pt-6">
+          <h2 className="text-2xl font-bold text-primary mb-4 flex items-center gap-2">
+            <FaGithub className="icon-primary" />
+            Support the Project
+          </h2>
+          <div className="bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 p-6 rounded-xl border-2 border-amber-200 dark:border-amber-700 transition-colors duration-200">
+            <p className="text-secondary leading-relaxed mb-4">
+              WAVE is free and open source. If it helps you take better breaks, please consider giving it a star on
+              GitHub — it's the easiest way to help the project grow.
+            </p>
+            <button
+              onClick={() => handleOpenExternal(GITHUB_REPO_URL)}
+              className="inline-flex items-center gap-3 px-5 py-2.5 rounded-lg font-semibold text-white bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 shadow-md hover:shadow-lg transition cursor-pointer"
+            >
+              <FaStar className="text-lg" />
+              <span>Star on GitHub</span>
+            </button>
+            <button
+              onClick={() => handleOpenExternal(GITHUB_REPO_URL)}
+              className="ml-3 inline-flex items-center gap-3 px-5 py-2.5 rounded-lg font-medium text-primary bg-white dark:bg-bright-gray-700 border border-bright-gray-200 dark:border-bright-gray-600 hover:bg-bright-gray-50 dark:hover:bg-bright-gray-600 transition cursor-pointer"
+            >
+              <FaGithub className="text-lg" />
+              <span>View Source</span>
+            </button>
           </div>
         </div>
 

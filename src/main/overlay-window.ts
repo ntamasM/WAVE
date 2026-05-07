@@ -23,7 +23,7 @@ export function createOverlayWindow(dirname: string, options: OverlayWindowOptio
     movable: false,
     minimizable: false,
     maximizable: false,
-    focusable: true,
+    focusable: false,
     hasShadow: false,
     show: false,
     webPreferences: {

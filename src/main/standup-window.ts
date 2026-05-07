@@ -63,7 +63,7 @@ export class StandUpWindow {
         this.win.setPosition(x, y, false);
       }
 
-      this.win.show();
+      this.win.showInactive();
       const bounds = this.win.getBounds();
       logger.info(`Stand up window shown at (${bounds.x}, ${bounds.y}), position: ${position}`);
     });

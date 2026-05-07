@@ -25,7 +25,7 @@ export class PreLockWindow {
     this.win.webContents.on('did-finish-load', () => {
       if (!this.win || this.win.isDestroyed()) return;
       this.win.center();
-      this.win.show();
+      this.win.showInactive();
       logger.info(`Pre-lock warning window shown (${warningMinutes}m before lock)`);
     });
 
