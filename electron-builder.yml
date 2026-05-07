@@ -10,7 +10,6 @@ files:
       - '!**/*.map'
       - '!**/*.ts'
       - '!dist/*'
-      - '!node_modules'
       - '!src'
       - '!.gitignore'
       - '!.eslintrc*'
